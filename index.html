@@ -1,0 +1,1644 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{box-sizing:border-box}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style><style>html{background:#0B1418}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}</style><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0B1418"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Fort Merle"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"></head><body><title>Escape from Fort Merle</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Karla:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --slate: #0B1418;
+    --slate-2: #121F25;
+    --slate-3: #182A31;
+    --line: #233A42;
+    --sea: #2F6B74;
+    --sea-light: #58A0A6;
+    --amber: #E8A33D;
+    --amber-dim: #8A6224;
+    --rust: #C24B3A;
+    --bone: #DCD3BE;
+    --bone-dim: #96907F;
+    --moss: #6E8F5E;
+    --ink: #060D10;
+    --display: "IM Fell English SC", Georgia, "Times New Roman", serif;
+    --body: "Karla", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+    color-scheme: dark;
+  }
+
+  html, body { min-height: 100%; }
+  body {
+    margin: 0;
+    background: var(--slate);
+    color: var(--bone);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding-block: 18px 40px; padding-left: 16px; padding-right: 16px; }
+
+  /* ------------------------------------------------------------ header */
+  header.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  h1 { font-family: var(--display); font-weight: 400; font-size: clamp(28px, 5vw, 44px); line-height: 1; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+  h1 span { color: var(--amber); }
+  .tagline { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--bone-dim); margin: 6px 0 0; }
+  .toggles { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  button {
+    font: 600 15px/1.2 var(--body);
+    color: var(--bone);
+    background: var(--slate-3);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 10px 14px;
+    cursor: pointer;
+    text-align: left;
+  }
+  button:hover:not(:disabled) { border-color: var(--amber-dim); background: #1E333B; }
+  button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.small { font: 600 12px/1.2 var(--mono); letter-spacing: .06em; padding: 7px 10px; }
+  button.small[aria-pressed="true"] { border-color: var(--amber-dim); color: var(--amber); }
+  button.go { border-color: var(--amber-dim); }
+  button.danger { border-color: #5E2B24; }
+  button.danger:hover:not(:disabled) { background: #2B1A17; border-color: var(--rust); }
+
+  /* ------------------------------------------------------------ stage */
+  .stage { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, .9fr); gap: 18px; align-items: start; }
+  @media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+
+  .scene { position: relative; aspect-ratio: 16 / 9; max-width: 100%; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; background: var(--ink); isolation: isolate; }
+  .frame { position: absolute; inset: 0; transform-origin: 50% 55%; animation: drift 46s ease-in-out infinite alternate; }
+  @keyframes drift { from { transform: scale(1.005) translate(0, 0); } to { transform: scale(1.055) translate(-1.1%, -.7%); } }
+  .frame img.art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0;
+    transition: opacity .7s ease, filter 1.4s ease; }
+  .frame img.art.show { opacity: 1; }
+  .frame[data-tod="dawn"] img.art { filter: brightness(.88) saturate(.82) hue-rotate(-6deg); }
+  .frame[data-tod="day"] img.art { filter: none; }
+  .frame[data-tod="dusk"] img.art { filter: brightness(.8) saturate(.9) sepia(.14); }
+  .frame[data-tod="night"] img.art { filter: brightness(.52) saturate(.62) hue-rotate(8deg) contrast(1.05); }
+  .frame[data-tod="end"] img.art { filter: none; }
+  canvas#fx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+
+  .place { position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 16px 12px; pointer-events: none;
+    background: linear-gradient(transparent, rgba(6, 13, 16, .92)); font-family: var(--display); font-size: 22px; z-index: 3; }
+  .place small { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--sea-light); }
+
+  /* hotspots: only a glowing dot, never a box */
+  .hotspots { position: absolute; inset: 0; z-index: 2; }
+  .hot { position: absolute; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; border-radius: 0; }
+  .hot:hover:not(:disabled), .hot:focus, .hot:focus-visible { background: none; border: 0; outline: none; }
+  .hot::after, .hot::before { content: ""; position: absolute; left: 50%; top: 50%; border-radius: 50%; pointer-events: none; }
+  .hot::after { width: 10px; height: 10px; margin: -5px 0 0 -5px; background: rgba(232,163,61,.9);
+    box-shadow: 0 0 0 4px rgba(232,163,61,.18), 0 0 14px rgba(232,163,61,.45);
+    animation: pip 2.4s ease-in-out infinite; transition: transform .2s ease; }
+  .hot::before { width: 34px; height: 34px; margin: -17px 0 0 -17px; border: 1px solid rgba(232,163,61,.75);
+    opacity: 0; transform: scale(.5); transition: opacity .2s ease, transform .25s ease; }
+  .hot:hover::before, .hot:focus-visible::before, .hot.armed::before { opacity: 1; transform: scale(1); }
+  .hot:hover::after, .hot:focus-visible::after, .hot.armed::after { transform: scale(1.35); animation: none; }
+  .hot.move::after { background: rgba(88,160,166,.9); box-shadow: 0 0 0 4px rgba(88,160,166,.16), 0 0 14px rgba(88,160,166,.45); }
+  .hot.move::before { border-color: rgba(88,160,166,.75); }
+  .hot.go::after { background: rgba(194,75,58,.95); box-shadow: 0 0 0 4px rgba(194,75,58,.2), 0 0 16px rgba(194,75,58,.55); }
+  .hot.go::before { border-color: rgba(194,75,58,.8); }
+  @keyframes pip { 0%, 100% { transform: scale(1); opacity: .75; } 50% { transform: scale(1.3); opacity: 1; } }
+
+  .tip { position: absolute; transform: translate(-50%, calc(-100% - 22px)); pointer-events: none; opacity: 0; z-index: 4;
+    transition: opacity .15s ease; background: rgba(8,16,19,.94); border: 1px solid var(--amber-dim);
+    border-radius: 3px; padding: 7px 10px; max-width: 240px; }
+  .tip.on { opacity: 1; }
+  .tip b { display: block; font: 600 14px/1.3 var(--body); color: var(--bone); }
+  .tip span { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--bone-dim); }
+
+  .flash { position: absolute; inset: 0; background: var(--rust); opacity: 0; pointer-events: none; z-index: 5; }
+  .shake { animation: shake .5s; }
+  @keyframes shake { 10%, 90% { transform: translateX(-2px); } 30%, 70% { transform: translateX(4px); } 50% { transform: translateX(-6px); } }
+
+  /* the close-up card that slides over the scene */
+  .card { position: absolute; right: 3%; bottom: 13%; width: min(46%, 380px); margin: 0; z-index: 6; cursor: pointer;
+    background: var(--ink); border: 1px solid var(--amber-dim); border-radius: 3px; padding: 6px 6px 8px;
+    box-shadow: 0 18px 40px rgba(0,0,0,.6); opacity: 0; transform: translateY(10px) rotate(-.6deg) scale(.97);
+    transition: opacity .45s ease, transform .5s cubic-bezier(.2,.8,.2,1); }
+  .card.on { opacity: 1; transform: translateY(0) rotate(-.6deg) scale(1); }
+  .card.wide { width: min(62%, 520px); }
+  .card img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 2px; }
+  .card.wide img { aspect-ratio: 16 / 9; }
+  .card figcaption { font: 12px/1.4 var(--mono); letter-spacing: .04em; color: var(--bone-dim); padding: 6px 4px 0; }
+
+  /* a character speaking */
+  .callout { position: absolute; left: 3%; top: 5%; max-width: min(62%, 420px); z-index: 6; display: flex; gap: 10px; align-items: center;
+    background: rgba(6,13,16,.88); border: 1px solid var(--line); border-left: 2px solid var(--amber); border-radius: 3px; padding: 8px 12px 8px 8px;
+    opacity: 0; transform: translateX(-8px); transition: opacity .35s ease, transform .4s ease; pointer-events: none; }
+  .callout.on { opacity: 1; transform: none; }
+  .callout img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: 1px solid var(--amber-dim); flex: none; }
+  .callout b { display: block; font-family: var(--display); font-weight: 400; font-size: 17px; line-height: 1.1; color: var(--amber); }
+  .callout span { display: block; font-size: 14px; line-height: 1.35; color: var(--bone); }
+
+  .compass { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+  @media (max-width: 520px) { .compass { grid-template-columns: repeat(2, 1fr); } }
+  .compass button { display: grid; gap: 2px; padding: 9px 12px; }
+  .compass button b { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; color: var(--sea-light); font-weight: 600; }
+  .compass button span { font-size: 13px; }
+  .compass button:disabled b { color: var(--bone-dim); }
+
+  /* ------------------------------------------------------------ ledger */
+  .ledger { border: 1px solid var(--line); border-radius: 3px; background: var(--slate-2); padding: 16px; }
+  .ledger h2, .panel h2 { font-family: var(--display); font-size: 19px; margin: 0 0 10px; font-weight: 400; }
+  .clock { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--mono); font-size: 13px; color: var(--bone-dim); }
+  .clock b { color: var(--bone); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .nights { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin: 10px 0 4px; }
+  .nights i { height: 6px; border-radius: 1px; background: #0A1418; border: 1px solid var(--line); }
+  .nights i.past { background: var(--bone-dim); border-color: var(--bone-dim); opacity: .45; }
+  .nights i.now { background: var(--amber); border-color: var(--amber); }
+  .nights i.spring { border-color: var(--sea-light); }
+  .meters { display: grid; gap: 10px; margin: 14px 0 6px; }
+  .meter-label { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--bone-dim); }
+  .meter-label span:last-child { font-variant-numeric: tabular-nums; }
+  .bar { height: 7px; background: #0A1418; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; transition: width .35s ease; }
+  .bar.susp i { background: linear-gradient(90deg, var(--moss), var(--amber) 55%, var(--rust)); }
+  .bar.stam i { background: var(--sea-light); }
+  .bar.boat i { background: var(--amber); }
+
+  .kit { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; font-family: var(--mono); font-size: 12.5px; }
+  .kit li { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; border-bottom: 1px dotted var(--line); padding-bottom: 5px; }
+  .kit li img { width: 34px; height: 34px; border-radius: 2px; object-fit: cover; border: 1px solid var(--line); }
+  .kit li.missing img { filter: grayscale(1) brightness(.5); }
+  .kit li.have { color: var(--bone); }
+  .kit li.missing { color: #6E7A7E; }
+  .kit li .st { text-align: right; }
+  .kit li.have .st { color: var(--moss); }
+  .kit li.total { grid-template-columns: 1fr auto; border-bottom: 0; padding-top: 2px; }
+
+  .tide { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; font-family: var(--mono); font-size: 12px; color: var(--bone-dim); }
+  .tide b { color: var(--sea-light); }
+  .tide.spring b { color: var(--amber); }
+
+  /* ------------------------------------------------------------ log */
+  .panel { margin-top: 18px; border: 1px solid var(--line); border-radius: 3px; background: var(--slate-2); padding: 16px; }
+  .log { max-height: 280px; overflow-y: auto; display: grid; gap: 10px; padding-right: 6px; }
+  .log p { margin: 0; max-width: 70ch; }
+  .log p.new { color: var(--bone); }
+  .log p.old { color: #8C9799; }
+  .log p.bad { color: #E08878; }
+  .log p.good { color: #A8C89A; }
+  .log p.char { display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: start; }
+  .log p.char img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--amber-dim); }
+  .log p.char i { font-style: normal; display: block; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--amber); }
+  .log p .who { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--amber); display: block; }
+
+  .choices { display: grid; gap: 8px; margin-top: 16px; }
+  .choices .row { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .cost { display: block; font-family: var(--mono); font-size: 11px; color: var(--bone-dim); margin-top: 3px; letter-spacing: .04em; }
+  .hint { font-family: var(--mono); font-size: 11px; color: var(--bone-dim); margin: 10px 0 0; letter-spacing: .03em; max-width: 80ch; }
+
+  .end { text-align: center; padding: 22px 16px; }
+  .end h2 { font-family: var(--display); font-weight: 400; font-size: 32px; margin: 0 0 8px; }
+  .end p { max-width: 60ch; margin: 0 auto 14px; }
+
+  /* ------------------------------------------------------------ overlays */
+  .title-screen { position: fixed; inset: 0; z-index: 50; display: grid; place-items: end start; overflow-y: auto;
+    background: var(--ink) url("art/fort.jpg") center / cover no-repeat; }
+  .title-screen::before { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(6,13,16,.15) 0%, rgba(6,13,16,.35) 45%, rgba(6,13,16,.94) 100%); }
+  .title-inner { position: relative; padding: 32px 16px calc(40px + env(safe-area-inset-bottom, 0px)); max-width: 1200px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+  .title-inner h1 { font-size: clamp(40px, 9vw, 92px); text-shadow: 0 2px 24px rgba(0,0,0,.6); }
+  .title-inner .tagline { color: var(--bone); opacity: .8; }
+  .title-inner p.pitch { max-width: 54ch; font-size: 17px; margin: 18px 0 20px; color: var(--bone); text-shadow: 0 1px 8px rgba(0,0,0,.7); }
+  .title-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .title-actions button.go { background: var(--amber); color: var(--ink); border-color: var(--amber); font-size: 16px; padding: 12px 20px; }
+  .title-actions button.go:hover { background: #F2B657; border-color: #F2B657; }
+  .title-note { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--bone-dim); margin-top: 14px; }
+
+  .map-overlay { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px; background: rgba(4,9,11,.82); overflow-y: auto; }
+  .map-box { width: min(100%, 1000px); background: var(--slate-2); border: 1px solid var(--line); border-radius: 3px; padding: 12px; }
+  .map-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .map-head h2 { font-family: var(--display); font-weight: 400; font-size: 22px; margin: 0; }
+  .map { position: relative; aspect-ratio: 1100 / 614; max-width: 100%; }
+  .map img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 2px; }
+  .pin { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 6px;
+    font: 600 12px/1 var(--mono); letter-spacing: .04em; color: #1B1A15; background: rgba(236,226,202,.92);
+    border: 1px solid #6E5A3A; border-radius: 12px; padding: 5px 8px 5px 6px; white-space: nowrap; }
+  .pin::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #7E7461; flex: none; }
+  .pin.here { background: var(--amber); border-color: #7A4F12; }
+  .pin.here::before { background: var(--rust); box-shadow: 0 0 0 3px rgba(194,75,58,.35); }
+  .pin.near { cursor: pointer; }
+  .pin.near::before { background: var(--sea); }
+  .pin.near:hover { background: #F4EBD4; }
+  .pin.far { opacity: .78; }
+  .map-legend { font-family: var(--mono); font-size: 11px; color: var(--bone-dim); margin: 8px 2px 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .frame { animation: none; }
+    .hot::after { animation: none; }
+    .card, .callout { transition: opacity .2s linear; transform: none; }
+  }
+  @media (max-width: 560px) {
+    .card { width: 58%; bottom: 16%; }
+    .card.wide { width: 74%; }
+    .callout { max-width: 86%; }
+    .callout img { width: 44px; height: 44px; }
+    .pin { font-size: 10px; padding: 3px 6px 3px 4px; }
+  }
+</style>
+
+<div class="title-screen" id="title">
+  <div class="title-inner">
+    <p class="tagline">North Sea penal island &middot; 1893</p>
+    <h1>Escape from <span>Fort Merle</span></h1>
+    <p class="pitch">Twelve nights until they ship you to the mainland prison. Steal oak, rope, canvas and pitch from under the warders' noses, build a boat in the sea cave, and wait for the spring tide.</p>
+    <div class="title-actions" id="title-actions"></div>
+    <p class="title-note">Sound, music and narration start when you begin. Headphones help.</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Escape from <span>Fort Merle</span></h1>
+      <p class="tagline">North Sea penal island &middot; twelve nights until the transfer</p>
+    </div>
+    <div class="toggles">
+      <button class="small" id="sound-btn" type="button" aria-pressed="false">Sound</button>
+      <button class="small" id="music-btn" type="button" aria-pressed="false">Music</button>
+      <button class="small" id="voice-btn" type="button" aria-pressed="false">Voice</button>
+      <button class="small" id="map-btn" type="button">Map</button>
+      <button class="small" id="restart-btn" type="button">Start over</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div>
+      <div class="scene" id="scene">
+        <div class="frame" id="frame" data-tod="dusk">
+          <img class="art show" id="art-a" alt="">
+          <img class="art" id="art-b" alt="">
+          <div class="hotspots" id="hotspots"></div>
+          <div class="tip" id="tip" role="status"></div>
+        </div>
+        <canvas id="fx" width="960" height="540" aria-hidden="true"></canvas>
+        <div class="callout" id="callout" aria-hidden="true"><img id="co-face" alt=""><div><b id="co-name"></b><span id="co-text"></span></div></div>
+        <figure class="card" id="card" aria-hidden="true"><img id="card-img" alt=""><figcaption id="card-cap"></figcaption></figure>
+        <div class="flash" id="flash"></div>
+        <div class="place"><small id="place-kind">Cell block D</small><span id="place-name">Your cell</span></div>
+      </div>
+
+      <div class="compass" id="compass" aria-label="Directions"></div>
+
+      <div class="panel">
+        <h2 id="log-title">The ledger of nights</h2>
+        <div class="log" id="log" aria-live="polite"></div>
+        <div class="choices" id="choices"></div>
+        <p class="hint" id="hint">Search the picture: everything you can use has a glowing dot. On a phone, tap once to see what it is and tap again to do it. Move with the compass, the map or the arrow keys. Your progress is saved in this browser.</p>
+      </div>
+    </div>
+
+    <aside class="ledger">
+      <h2>Watch</h2>
+      <div class="clock">
+        <span>Night <b id="day">1</b> of 12</span>
+        <span id="watch">Dusk</span>
+      </div>
+      <div class="nights" id="nights" aria-hidden="true"></div>
+
+      <div class="meters">
+        <div>
+          <div class="meter-label"><span>Suspicion</span><span id="susp-val">0</span></div>
+          <div class="bar susp"><i id="susp-bar" style="width:0%"></i></div>
+        </div>
+        <div>
+          <div class="meter-label"><span>Strength</span><span id="stam-val">100</span></div>
+          <div class="bar stam"><i id="stam-bar" style="width:100%"></i></div>
+        </div>
+        <div>
+          <div class="meter-label"><span>Boat</span><span id="boat-val">0%</span></div>
+          <div class="bar boat"><i id="boat-bar" style="width:0%"></i></div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:18px">Contraband</h2>
+      <ul class="kit" id="kit"></ul>
+
+      <div class="tide" id="tide"></div>
+    </aside>
+  </div>
+</div>
+
+<div class="map-overlay" id="mapov" hidden>
+  <div class="map-box" role="dialog" aria-modal="true" aria-labelledby="map-title">
+    <div class="map-head">
+      <h2 id="map-title">Chart of Fort Merle</h2>
+      <button class="small" id="map-close" type="button">Close</button>
+    </div>
+    <div class="map" id="map"><img src="art/map.jpg" alt="Hand-drawn chart of the island fortress"></div>
+    <p class="map-legend">Amber: where you are. Blue dots: one watch away, click to go there.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const R = (a, b) => a + Math.random() * (b - a);
+
+  /* Recorded lines. Narration keeps the voice it already had; the characters use free neural voices. */
+  const VOICE = {"You black out over the work bench. The orderly writes your name down.": "n00", "Word passes down the block: spring tide tonight. The water will stand high and slack after dark.": "n01", "A storm crowds in from the north west. The gutters roar all day.": "n02", "Gulls quarrel over the rubbish behind the galley. Nobody looks up.": "n03", "Kessel, who informs for tobacco, watches you from the far bench.": "n04", "The sea throws itself at the wall. Somewhere a shutter tears loose.": "n05", "You sleep with your boots on, the way everyone does here.": "n06", "You lever the stone back and tuck everything beneath it. Nothing under your mattress now.": "n07", "Through the door: the tide table for the month, read aloud for the harbour boat. You memorise the spring tides.": "n08", "Voss has been here eleven years and has the hands of a boatwright. He hears you out, then names his price: he comes with you.": "n09", "Oak, seasoned, cut for coffin lids. You walk out with it strapped inside your trouser leg.": "n10", "Chisel down your sleeve, nails in your sock. You walk stiff as a saint.": "n11", "A sack becomes a sail, folded flat against your back under the shirt.": "n12", "Pitch from the roof detail, fat from the pans, cooked down in a can. It stinks of every promise you have made yourself.": "n13", "Cold porridge, bacon fat, two eggs meant for the governor.": "n14", "The bell speaks once as the rope comes free. You stand in the dark and count to two hundred.": "n15", "You sing the hymns loudly enough to be remembered as harmless.": "n16", "Over the wall on the seaward side, down the goat path with": "n17", "Not with what is down here. Still missing:": "n18", "Voss shows you the trick of the garboard seam. Eleven years, and his hands still know it.": "n19", "You sleep under the upturned hull with the sea two metres away.": "n20", "You go to": "n21", "In daylight the tower would see you before the keel was wet. Wait for dark.": "n22", "You carry her down over the shingle. The water is colder than you remembered.": "n23", "Fort Merle stands on a rock four miles off the coast, and everyone here has heard the same sentence: nobody swims it.": "n24", "The clerk read your transfer order this morning. Twelve nights, then the mainland prison and a cell without weather in it.": "n25", "So you will need a boat. Oak from the carpentry shop, rope from the chapel, canvas from the wash house, pitch from the galley, and a cave under the cliff where the warders never go.": "n26", "The sea takes you": "n27", "Two hundred metres out, the swell turns the boat beam on. The cold does the rest. They find the wreck on the shingle at dawn.": "n28", "The transfer": "n29", "On the thirteenth morning they chain you to seven other men and row you to the mainland prison, where nobody has ever heard of a tide.": "n30", "You lay a keel from the longest plank and scarf the ends by feel.": "n31", "Ribs bent over a driftwood fire, lashed with bell rope.": "n32", "The hull closes. In the dark it looks like something a child drew.": "n33", "Pitch over every seam, worked in with your thumbs until they blister.": "n34", "The sail is bent to a spar cut from the roof batten. She is finished.": "n35", "Night 1 of 12": "n36", "Night 2 of 12": "n37", "Night 3 of 12": "n38", "Night 4 of 12": "n39", "Night 5 of 12": "n40", "Night 6 of 12": "n41", "Night 7 of 12": "n42", "Night 8 of 12": "n43", "Night 9 of 12": "n44", "Night 10 of 12": "n45", "Night 11 of 12": "n46", "Night 12 of 12": "n47", "Fort Merle. Twelve nights until the transfer.": "n48", "Over the wall on the seaward side, down the goat path.": "n17b"};
+  const CHARS = {"c_voss_intro": {"who": "voss", "text": "Eleven years I've watched that water. I know where it's kind, and where it isn't."}, "c_voss_build": {"who": "voss", "text": "Tighter. Let the plank tell you where it wants to go."}, "c_voss_launch": {"who": "voss", "text": "Row, lad. And don't look back at it."}, "c_kessel": {"who": "kessel", "text": "Busy hands, friend. The governor likes to hear about busy hands."}, "c_warder_count": {"who": "warder", "text": "Count! Stand where you are!"}, "c_warder_beam": {"who": "warder", "text": "Who's on the wall? Show yourself!"}, "c_warder_door": {"who": "warder", "text": "Looking for something, are we?"}, "c_warder_sea": {"who": "warder", "text": "There! Light on the sail! Man the boat!"}, "c_warder_transfer": {"who": "warder", "text": "On your feet. The boat won't wait."}, "c_foreman_planks": {"who": "foreman", "text": "Seven lids yesterday. Six today. Funny, that."}, "c_foreman_tools": {"who": "foreman", "text": "Every tool back on its hook by the bell."}, "c_laundress": {"who": "laundress", "text": "Mail sacks don't walk off on their own, dearie."}, "c_governor": {"who": "governor", "text": "I have read your file all week. Take him below."}};
+  const PEOPLE = {
+    voss: "Voss", kessel: "Kessel", warder: "Sergeant Brandt", governor: "The governor",
+    foreman: "The foreman", cook: "The cook", laundress: "The laundress"
+  };
+
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private window */ } },
+    del(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
+  };
+  const PREFS_KEY = "fort-merle-prefs";
+  const SAVE_KEY = "fort-merle-save-v2";
+  const calm = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  /* ================================================================ sound
+     Everything is synthesised in the browser: room tone, wind, surf, rain, fire,
+     drips, gulls, the chapel organ, a sea-bell, effects and an adaptive score. */
+  const Sound = (() => {
+    let ctx = null, master, sfx, amb, mus, roomIn, hallIn, musIn, scene = null, heart = null;
+    const buf = {};
+    const st = { sound: false, music: false, duck: 1, tension: 0, night: false };
+    const now = () => ctx.currentTime;
+
+    function noise(kind, seconds) {
+      const len = Math.floor(ctx.sampleRate * seconds), b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
+      let last = 0, b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random() * 2 - 1;
+        if (kind === "white") d[i] = w;
+        else if (kind === "brown") { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; }
+        else {
+          b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.969 * b2 + w * 0.153852;
+          b3 = 0.8665 * b3 + w * 0.3104856; b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898;
+          d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
+        }
+      }
+      return b;
+    }
+    function impulse(seconds, decay) {
+      const len = Math.floor(ctx.sampleRate * seconds), b = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const d = b.getChannelData(c);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      }
+      return b;
+    }
+    function gain(v, to) { const g = ctx.createGain(); g.gain.value = v; if (to) g.connect(to); return g; }
+    function ramp(param, v, secs) { const t = now(); param.cancelScheduledValues(t); param.setValueAtTime(param.value, t); param.linearRampToValueAtTime(v, t + secs); }
+
+    function ensure() {
+      if (ctx) { if (ctx.state === "suspended") ctx.resume(); return true; }
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      ctx = new AC();
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 3; comp.attack.value = 0.01; comp.release.value = 0.3;
+      master = gain(0.9); master.connect(comp); comp.connect(ctx.destination);
+      sfx = gain(0, master); amb = gain(0, master); mus = gain(0, master);
+      const room = ctx.createConvolver(); room.buffer = impulse(1.3, 3);
+      const hall = ctx.createConvolver(); hall.buffer = impulse(3.6, 2.2);
+      const musHall = ctx.createConvolver(); musHall.buffer = impulse(4.2, 2.6);
+      roomIn = gain(0.25); hallIn = gain(0); musIn = gain(0.5);
+      roomIn.connect(room); hallIn.connect(hall); musIn.connect(musHall);
+      room.connect(gain(0.8, master)); hall.connect(gain(0.7, master)); musHall.connect(gain(0.55, mus));
+      sfx.connect(roomIn); sfx.connect(hallIn);
+      buf.white = noise("white", 4); buf.pink = noise("pink", 4); buf.brown = noise("brown", 4);
+      return true;
+    }
+    function levels(secs = 1.2) {
+      if (!ctx) return;
+      ramp(sfx.gain, st.sound ? 0.85 : 0, secs);
+      ramp(amb.gain, st.sound ? 0.62 * st.duck : 0, secs);
+      ramp(mus.gain, st.music ? 0.5 * (st.duck < 1 ? 0.6 : 1) : 0, secs);
+    }
+
+    /* ---- building blocks */
+    function osc(type, f, t) { const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); return o; }
+    function tone(f, dur, o = {}) {
+      if (!ctx) return;
+      const t = now() + (o.at || 0), v = Math.max(o.vol || 0.1, 0.0002), x = osc(o.type || "sine", f, t), g = ctx.createGain();
+      if (o.detune) x.detune.value = o.detune;
+      if (o.slide) x.frequency.exponentialRampToValueAtTime(o.slide, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(v, t + (o.attack || 0.01));
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      let node = x;
+      if (o.filter) { const fl = ctx.createBiquadFilter(); fl.type = o.filter[0]; fl.frequency.value = o.filter[1]; fl.Q.value = o.filter[2] || 1; x.connect(fl); node = fl; }
+      node.connect(g).connect(o.dest || sfx);
+      x.start(t); x.stop(t + dur + 0.05);
+    }
+    function burst(dur, o = {}) {
+      if (!ctx) return;
+      const t = now() + (o.at || 0), s = ctx.createBufferSource(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+      s.buffer = buf[o.kind || "white"];
+      fl.type = o.ftype || "bandpass"; fl.frequency.setValueAtTime(o.f || 1000, t); fl.Q.value = o.q || 1;
+      if (o.sweep) fl.frequency.exponentialRampToValueAtTime(o.sweep, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(Math.max(o.vol || 0.2, 0.0002), t + (o.attack || 0.004));
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      s.connect(fl).connect(g).connect(o.dest || sfx);
+      s.start(t, Math.random() * 2); s.stop(t + dur + 0.05);
+    }
+    function bell(f0, o = {}) {
+      const parts = [[0.5, 1], [1, 0.8], [1.19, 0.5], [1.56, 0.35], [2, 0.4], [2.51, 0.2], [2.66, 0.15], [3.01, 0.12], [4.1, 0.06]];
+      parts.forEach(([r, a], i) => tone(f0 * r * R(0.998, 1.002), (o.decay || 4) * (1 - i * 0.07),
+        { vol: (o.vol || 0.08) * a, at: o.at || 0, dest: o.dest, attack: 0.003 }));
+    }
+    function creak(dur = 0.7, dest) {
+      const t = now(), x = osc("sawtooth", R(80, 110), t), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+      fl.type = "bandpass"; fl.frequency.value = R(500, 900); fl.Q.value = 6;
+      for (let i = 0; i < 8; i++) x.frequency.linearRampToValueAtTime(R(70, 130), t + dur * (i + 1) / 8);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      x.connect(fl).connect(g).connect(dest || sfx); x.start(t); x.stop(t + dur + 0.05);
+    }
+    function gull(dest, vol = 0.05, at = 0) {
+      const f = ["bandpass", 1500, 3];
+      tone(R(1400, 1750), 0.22, { type: "sawtooth", vol, slide: R(850, 1000), at, dest, filter: f });
+      tone(R(1250, 1500), 0.26, { type: "sawtooth", vol: vol * 0.8, slide: R(750, 900), at: at + 0.3, dest, filter: f });
+      if (Math.random() < 0.5) tone(R(1300, 1600), 0.2, { type: "sawtooth", vol: vol * 0.6, slide: 900, at: at + 0.62, dest, filter: f });
+    }
+
+    const fx = {
+      step() { burst(0.09, { f: R(260, 420), q: 1.4, vol: 0.22, kind: "pink" }); burst(0.09, { f: R(240, 380), q: 1.4, vol: 0.18, kind: "pink", at: 0.3 }); },
+      door() { creak(0.55); burst(0.35, { ftype: "lowpass", f: 140, vol: 0.5, kind: "brown", at: 0.45 }); tone(70, 0.35, { vol: 0.22, at: 0.45 }); },
+      creak() { creak(0.9); },
+      clank() { [930, 1370, 2210, 2980].forEach((f, i) => tone(f * R(0.98, 1.02), 0.4 - i * 0.06, { type: "triangle", vol: 0.05 })); burst(0.05, { ftype: "highpass", f: 3000, vol: 0.15 }); },
+      hammer() {
+        [0, 0.38].forEach(at => { burst(0.12, { ftype: "lowpass", f: 220, vol: 0.5, kind: "brown", at }); burst(0.08, { f: R(800, 950), q: 5, vol: 0.22, at }); });
+      },
+      bell() { bell(392, { vol: 0.12, decay: 5.5 }); },
+      rope() { burst(0.06, { ftype: "highpass", f: 2500, vol: 0.3 }); burst(0.2, { ftype: "lowpass", f: 300, vol: 0.3, kind: "brown", at: 0.05 }); },
+      rip() { burst(0.45, { f: 700, q: 2, vol: 0.25, sweep: 3200 }); },
+      boil() { for (let i = 0; i < 8; i++) tone(R(160, 380), 0.08, { vol: 0.07, slide: R(420, 700), at: i * R(0.08, 0.16) }); },
+      splash() { burst(1.2, { ftype: "lowpass", f: 1400, vol: 0.4, attack: 0.06, kind: "pink", sweep: 380 }); for (let i = 0; i < 6; i++) tone(R(300, 700), 0.06, { vol: 0.05, slide: R(800, 1200), at: 0.2 + i * 0.09 }); },
+      alarm() { for (let i = 0; i < 7; i++) bell(1180, { vol: 0.05, at: i * 0.26, decay: 0.7 }); tone(2050, 1.6, { vol: 0.04, at: 0.3 }); },
+      gull() { gull(sfx, 0.05); },
+      thunder() { burst(3.8, { ftype: "lowpass", f: 170, vol: 0.75, attack: 0.05, kind: "brown" }); burst(1.4, { ftype: "lowpass", f: 900, vol: 0.2, kind: "pink", at: 0.04, sweep: 180 }); },
+      paper() { burst(0.2, { ftype: "highpass", f: 4000, vol: 0.08 }); burst(0.16, { ftype: "highpass", f: 3500, vol: 0.06, at: 0.25 }); },
+      coins() { for (let i = 0; i < 5; i++) tone(R(3000, 4800), 0.08, { vol: 0.02, at: i * 0.06 }); }
+    };
+    function play(name) { if (st.sound && ensure() && fx[name]) { try { fx[name](); } catch (e) { /* never break the game over a sound */ } } }
+
+    /* ---- ambience: one small graph per place, cross-faded when you move */
+    function makeScene() {
+      const g = gain(0, amb);
+      const sc = { g, nodes: [], timers: [], alive: true };
+      sc.drip = gain(1, g); sc.drip.connect(gain(0.8, roomIn));
+      const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1300;
+      sc.far = gain(1); sc.far.connect(lp); lp.connect(g); sc.far.connect(gain(0.5, roomIn));
+      sc.hall = gain(1, g); sc.hall.connect(gain(0.9, hallIn));
+      return sc;
+    }
+    function loop(sc, kind, ftype, f, q, vol, lfo) {
+      const s = ctx.createBufferSource(); s.buffer = buf[kind]; s.loop = true;
+      const fl = ctx.createBiquadFilter(); fl.type = ftype; fl.frequency.value = f; fl.Q.value = q;
+      const g = gain(vol); s.connect(fl).connect(g).connect(sc.g);
+      if (lfo) { const o = ctx.createOscillator(), og = gain(lfo.depth); o.frequency.value = lfo.rate; o.connect(og).connect(lfo.freq ? fl.frequency : g.gain); o.start(); sc.nodes.push(o); }
+      s.start(0, Math.random() * 3); sc.nodes.push(s);
+      return { fl, g };
+    }
+    function every(sc, min, max, fn) {
+      const tick = () => { if (!sc.alive) return; try { fn(); } catch (e) { /* ignore */ } sc.timers.push(setTimeout(tick, R(min, max) * 1000)); };
+      sc.timers.push(setTimeout(tick, R(min, max) * 400));
+    }
+    function swells(sc, layer, base, peak, min, max) {
+      every(sc, min, max, () => {
+        const t = now(), p = layer.g.gain;
+        p.cancelScheduledValues(t); p.setValueAtTime(p.value, t);
+        p.linearRampToValueAtTime(peak * R(0.7, 1), t + R(1.2, 2.4));
+        p.linearRampToValueAtTime(base, t + R(4, 6.5));
+      });
+    }
+    const L = {
+      room(sc, v) { loop(sc, "brown", "lowpass", 160, 0.7, v); },
+      wind(sc, v) {
+        loop(sc, "pink", "bandpass", 520, 0.9, v, { rate: 0.07, depth: 260, freq: true });
+        loop(sc, "white", "bandpass", 1400, 3, v * 0.25, { rate: 0.13, depth: v * 0.2 });
+      },
+      surf(sc, v, cutoff) {
+        const low = loop(sc, "brown", "lowpass", cutoff, 0.5, v * 0.35); swells(sc, low, v * 0.35, v, 3.5, 7);
+        const hiss = loop(sc, "pink", "lowpass", cutoff * 2.2, 0.5, v * 0.06); swells(sc, hiss, v * 0.04, v * 0.28, 4, 8);
+      },
+      rain(sc, v, inside) {
+        loop(sc, "white", inside ? "lowpass" : "highpass", inside ? 900 : 1800, 0.6, v * 0.32);
+        if (!inside) every(sc, 0.05, 0.3, () => burst(0.02, { ftype: "highpass", f: R(3000, 6000), vol: v * 0.05, dest: sc.g }));
+      },
+      drips(sc, min, max) { every(sc, min, max, () => tone(R(1300, 2400), 0.14, { vol: 0.035, slide: R(600, 900), dest: sc.drip })); },
+      fire(sc, v) {
+        loop(sc, "brown", "lowpass", 180, 0.7, v * 0.4);
+        every(sc, 0.03, 0.22, () => burst(R(0.01, 0.04), { f: R(1800, 5000), q: 1, vol: v * R(0.05, 0.25), dest: sc.g }));
+      },
+      bubbles(sc, v) { every(sc, 0.15, 0.9, () => tone(R(140, 320), 0.09, { vol: v * 0.12, slide: R(380, 620), dest: sc.g })); },
+      steam(sc, v) { loop(sc, "white", "highpass", 2800, 0.5, v * 0.2, { rate: 0.2, depth: v * 0.12 }); },
+      organ(sc, v) {
+        const fl = ctx.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = 1100;
+        const g = gain(v); fl.connect(g); g.connect(sc.hall);
+        [73.42, 146.83, 220, 293.66, 349.23].forEach((f, i) => {
+          const o = osc(i % 2 ? "triangle" : "sine", f, now()); o.detune.value = R(-6, 6);
+          o.connect(gain(i === 0 ? 0.5 : 0.22, fl)); o.start(); sc.nodes.push(o);
+        });
+        const lfo = osc("sine", 0.05, now()); lfo.connect(gain(v * 0.45, g.gain)); lfo.start(); sc.nodes.push(lfo);
+      },
+      gulls(sc) { every(sc, 7, 18, () => gull(sc.far, 0.035)); },
+      buoy(sc) { every(sc, 8, 16, () => bell(R(560, 600), { vol: 0.03, dest: sc.far, decay: 3.2 })); },
+      work(sc) {
+        every(sc, 5, 11, () => {
+          if (Math.random() < 0.5) for (let i = 0; i < 4; i++) burst(0.35, { f: R(1600, 2400), q: 2, vol: 0.03, at: i * 0.42, attack: 0.12, dest: sc.far });
+          else for (let i = 0; i < 3; i++) burst(0.07, { f: 900, q: 4, vol: 0.08, at: i * 0.5, dest: sc.far });
+        });
+      },
+      keys(sc) {
+        every(sc, 9, 20, () => {
+          for (let i = 0; i < 4; i++) burst(0.09, { f: R(260, 380), q: 1.2, vol: 0.05, at: i * 0.45, kind: "pink", dest: sc.far });
+          for (let i = 0; i < 5; i++) tone(R(3200, 5200), 0.05, { vol: 0.012, at: 1.9 + i * 0.05, dest: sc.far });
+        });
+      }
+    };
+    const RECIPES = {
+      cell(sc, n) { L.room(sc, 0.45); L.surf(sc, 0.22, 260); L.drips(sc, 2, 6); if (n) L.wind(sc, 0.08); },
+      corridor(sc) { L.room(sc, 0.45); L.drips(sc, 3, 8); L.keys(sc); L.surf(sc, 0.12, 220); },
+      yard(sc, n) { L.wind(sc, 0.32); L.surf(sc, 0.3, 500); n ? L.buoy(sc) : L.gulls(sc); },
+      workshop(sc) { L.room(sc, 0.35); L.work(sc); L.wind(sc, 0.07); },
+      kitchen(sc) { L.room(sc, 0.3); L.fire(sc, 0.5); L.bubbles(sc, 0.5); L.steam(sc, 0.2); },
+      laundry(sc) { L.room(sc, 0.3); L.steam(sc, 0.45); L.drips(sc, 0.8, 2.5); L.bubbles(sc, 0.2); },
+      chapel(sc, n) { L.room(sc, 0.25); L.organ(sc, n ? 0.07 : 0.14); L.drips(sc, 5, 10); L.wind(sc, 0.06); },
+      wall(sc, n) { L.wind(sc, 0.62); L.surf(sc, 0.7, 900); n ? L.buoy(sc) : L.gulls(sc); },
+      cave(sc) { L.surf(sc, 0.55, 700); L.fire(sc, 0.3); L.drips(sc, 1.5, 4); L.wind(sc, 0.1); },
+      sea(sc) { L.wind(sc, 0.4); L.surf(sc, 0.8, 1000); L.gulls(sc); }
+    };
+    const OUTSIDE = { yard: 1, wall: 1, cave: 1, sea: 1 };
+    const SPACE = { cell: [0.3, 0], corridor: [0.45, 0.1], yard: [0.1, 0], workshop: [0.25, 0], kitchen: [0.2, 0], laundry: [0.3, 0],
+                    chapel: [0.15, 0.55], wall: [0.05, 0], cave: [0.45, 0.2], sea: [0.05, 0] };
+    let want = null;
+    function setPlace(place, night, weather) {
+      want = { place, night, weather };
+      if (!ctx || !st.sound) return;
+      const key = place + (night ? ":n:" : ":d:") + weather;
+      if (scene && scene.key === key) return;
+      if (scene) {
+        const old = scene; old.alive = false; old.timers.forEach(clearTimeout);
+        ramp(old.g.gain, 0, 1.6);
+        setTimeout(() => { old.nodes.forEach(n => { try { n.stop(); } catch (e) { /* stopped */ } }); old.g.disconnect(); }, 1900);
+      }
+      const sc = makeScene(); sc.key = key;
+      (RECIPES[place] || RECIPES.cell)(sc, night);
+      if (weather === "rain" || weather === "storm") {
+        L.rain(sc, weather === "storm" ? 0.7 : 0.4, !OUTSIDE[place]);
+        if (weather === "storm") L.wind(sc, OUTSIDE[place] ? 0.4 : 0.12);
+      }
+      ramp(sc.g.gain, 1, 1.8);
+      const [r, h] = SPACE[place] || [0.2, 0];
+      roomIn.gain.setTargetAtTime(r, now(), 0.5); hallIn.gain.setTargetAtTime(h, now(), 0.5);
+      scene = sc;
+    }
+    function stopScene() {
+      if (!scene) return;
+      const old = scene; scene = null; old.alive = false; old.timers.forEach(clearTimeout);
+      setTimeout(() => { old.nodes.forEach(n => { try { n.stop(); } catch (e) { /* stopped */ } }); }, 1400);
+    }
+
+    /* ---- score: slow D-minor pads, a lonely fiddle line, and a pulse that rises with suspicion */
+    const N = n => 440 * Math.pow(2, (n - 69) / 12);
+    const DAY = [[50, 57, 62, 65], [46, 53, 58, 62], [53, 57, 60, 65], [48, 55, 60, 64]];
+    const NIGHT = [[50, 57, 62, 65], [43, 55, 58, 62], [50, 57, 62, 65], [45, 57, 61, 64]];
+    const MEL = [62, 65, 67, 69, 72, 74, 77];
+    const CH = 9;
+    let mTimer = null, nextChord = 0, chordIdx = 0, pulseNext = 0, trem = null;
+    function schedule() {
+      if (!st.music || !ctx) return;
+      const t = now();
+      if (nextChord < t) nextChord = t + 0.1;
+      while (nextChord < t + 1.5) { chord(nextChord); nextChord += CH; }
+      if (pulseNext < t) pulseNext = t + 0.05;
+      while (pulseNext < t + 0.6) { if (st.tension > 0.05) pulse(pulseNext); pulseNext += 0.42; }
+    }
+    function chord(at) {
+      const prog = st.night ? NIGHT : DAY, notes = prog[chordIdx % prog.length]; chordIdx++;
+      const fl = ctx.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = st.night ? 520 : 800; fl.Q.value = 0.4;
+      const g = gain(0); fl.connect(g); g.connect(mus); g.connect(musIn);
+      const dur = CH + 3;
+      g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(0.05, at + 3);
+      g.gain.setValueAtTime(0.05, at + CH - 1); g.gain.linearRampToValueAtTime(0, at + dur);
+      notes.forEach(n => [-7, 7].forEach(dt => {
+        const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = N(n); o.detune.value = dt;
+        o.connect(fl); o.start(at); o.stop(at + dur + 0.1);
+      }));
+      const b = ctx.createOscillator(); b.type = "sine"; b.frequency.value = N(notes[0] - 12);
+      const bg = gain(0, mus); b.connect(bg);
+      bg.gain.setValueAtTime(0, at); bg.gain.linearRampToValueAtTime(0.09, at + 2); bg.gain.linearRampToValueAtTime(0, at + dur);
+      b.start(at); b.stop(at + dur + 0.1);
+      if (Math.random() < (st.night ? 0.35 : 0.6)) phrase(at + R(1, 3));
+    }
+    function fiddle(n, at, d, vol = 0.045, dest) {
+      const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = N(n);
+      const vib = ctx.createOscillator(); vib.frequency.value = 5.2; vib.connect(gain(5, o.detune));
+      const fl = ctx.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = 2400;
+      const g = gain(0); o.connect(fl).connect(g); g.connect(dest || mus); g.connect(musIn);
+      g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(vol, at + 0.25);
+      g.gain.setValueAtTime(vol, at + d * 0.7); g.gain.linearRampToValueAtTime(0, at + d + 0.4);
+      o.start(at); vib.start(at); o.stop(at + d + 0.5); vib.stop(at + d + 0.5);
+    }
+    function phrase(at) {
+      let tt = at, idx = Math.floor(Math.random() * MEL.length);
+      const count = 2 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < count; i++) {
+        idx = Math.max(0, Math.min(MEL.length - 1, idx + [-2, -1, 1, 2][Math.floor(Math.random() * 4)]));
+        const d = R(0.9, 1.8); fiddle(MEL[idx], tt, d); tt += d * R(0.7, 1);
+      }
+    }
+    function pulse(at) {
+      const n = (Math.round(at / 0.42) % 4 === 3) ? 45 : 38;
+      const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = N(n);
+      const g = gain(0, mus); o.connect(g);
+      g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(Math.max(0.08 * st.tension, 0.0002), at + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.3);
+      o.start(at); o.stop(at + 0.35);
+    }
+    function startTrem() {
+      if (trem) return;
+      const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = N(74);
+      const o2 = ctx.createOscillator(); o2.type = "sawtooth"; o2.frequency.value = N(77); o2.detune.value = 6;
+      const fl = ctx.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = 2600;
+      const g = gain(0), am = gain(0.5); o.connect(fl); o2.connect(fl); fl.connect(am).connect(g).connect(mus);
+      const lfo = ctx.createOscillator(); lfo.frequency.value = 9; lfo.connect(gain(0.5, am.gain));
+      o.start(); o2.start(); lfo.start();
+      trem = { o, o2, lfo, g };
+    }
+    function stopTrem() { if (!trem) return; const t = trem; trem = null; ramp(t.g.gain, 0, 0.5); setTimeout(() => { [t.o, t.o2, t.lfo].forEach(n => { try { n.stop(); } catch (e) { /* stopped */ } }); }, 700); }
+
+    function sting(kind) {
+      if (!ensure() || (!st.music && !st.sound)) return;
+      const t = now() + 0.1, dest = st.music ? mus : sfx;
+      if (kind === "win") {
+        [62, 66, 69, 74, 78].forEach((n, i) => fiddle(n, t + i * 0.38, 2.6 - i * 0.2, 0.06, dest));
+        [50, 57, 62, 66, 69].forEach(n => { const o = osc("sawtooth", N(n), t), fl = ctx.createBiquadFilter(), g = gain(0, dest);
+          fl.type = "lowpass"; fl.frequency.value = 1100; o.connect(fl).connect(g);
+          g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.035, t + 2.5); g.gain.linearRampToValueAtTime(0, t + 8); o.start(t); o.stop(t + 8.2); });
+      } else {
+        [57, 53, 50, 45].forEach((n, i) => fiddle(n, t + i * 0.55, 1.7, 0.05, dest));
+        [38, 50, 53, 57].forEach(n => { const o = osc("sawtooth", N(n), t), fl = ctx.createBiquadFilter(), g = gain(0, dest);
+          fl.type = "lowpass"; fl.frequency.value = 380; o.connect(fl).connect(g);
+          g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.05, t + 1.5); g.gain.linearRampToValueAtTime(0, t + 6.5); o.start(t); o.stop(t + 6.7); });
+      }
+    }
+
+    return {
+      get sound() { return st.sound; },
+      get music() { return st.music; },
+      setSound(on) {
+        st.sound = on;
+        if (!ensure()) return false;
+        levels();
+        if (on && want) setPlace(want.place, want.night, want.weather);
+        if (!on) { stopScene(); this.heartbeat(false); }
+        return on;
+      },
+      setMusic(on) {
+        st.music = on;
+        if (!ensure()) return false;
+        levels(1.5);
+        if (on && !mTimer) { nextChord = now() + 0.3; pulseNext = now() + 0.3; mTimer = setInterval(schedule, 250); schedule(); startTrem(); }
+        if (!on && mTimer) { clearInterval(mTimer); mTimer = null; stopTrem(); }
+        return on;
+      },
+      mood(tension, night) {
+        st.tension = Math.max(0, Math.min(1, tension)); st.night = !!night;
+        if (trem && ctx) trem.g.gain.setTargetAtTime(Math.max(0, st.tension - 0.45) * 0.05, now(), 1.2);
+      },
+      duck(on) { st.duck = on ? 0.55 : 1; levels(0.6); },
+      place: setPlace,
+      play, sting,
+      heartbeat(active) {
+        if (active && st.sound && !heart && ensure()) {
+          heart = setInterval(() => { tone(58, 0.11, { vol: 0.22 }); tone(48, 0.13, { vol: 0.16, at: 0.18 }); }, 1100);
+        } else if ((!active || !st.sound) && heart) { clearInterval(heart); heart = null; }
+      }
+    };
+  })();
+
+  /* ================================================================ voice
+     One queue for the recorded narration and the characters, so lines never talk over each other. */
+  const Voice = (() => {
+    let on = false, player = null, current = null;
+    const queue = [];
+    const synth = window.speechSynthesis || null;
+    let sv = null;
+    function pick() {
+      if (!synth) return;
+      const all = synth.getVoices();
+      sv = all.find(v => /en-GB/i.test(v.lang) && /(daniel|george|arthur|oliver)/i.test(v.name)) || all.find(v => /en-GB/i.test(v.lang)) || all.find(v => /^en/i.test(v.lang)) || null;
+    }
+    if (synth) { pick(); synth.addEventListener("voiceschanged", pick); }
+    function finish(token) { if (current !== token) return; current = null; Sound.duck(false); setTimeout(pump, 170); }
+    function speakSynth(item, token) {
+      if (!synth || !item.text) { finish(token); return; }
+      const u = new SpeechSynthesisUtterance(item.text);
+      if (sv) u.voice = sv;
+      u.rate = 0.96; u.pitch = item.who ? 1 : 0.85;
+      u.onend = () => finish(token); u.onerror = () => finish(token);
+      synth.speak(u);
+      setTimeout(() => { if (current === token && !synth.speaking) finish(token); }, 1500 + item.text.length * 75);
+    }
+    function pump() {
+      if (!on || current || !queue.length) return;
+      const item = queue.shift(), token = {};
+      current = token; Sound.duck(true);
+      if (item.file && window.Audio) {
+        let failed = false;
+        const fail = () => { if (failed || current !== token) return; failed = true; speakSynth(item, token); };
+        try {
+          player = new window.Audio(item.file);
+          player.volume = 1;
+          player.onended = () => finish(token);
+          player.onerror = fail;
+          const p = player.play(); if (p && p.catch) p.catch(fail);
+          return;
+        } catch (e) { fail(); return; }
+      }
+      speakSynth(item, token);
+    }
+    function push(item) { if (!on || !item.text) return; queue.push(item); while (queue.length > 5) queue.shift(); pump(); }
+    return {
+      get on() { return on; },
+      get available() { return !!synth || !!window.Audio; },
+      set(v) { on = v; if (!on) this.stop(); return on; },
+      say(text) { const f = VOICE[text]; push({ text, file: f ? "voice/" + f + ".mp3" : null }); },
+      line(key) { const c = CHARS[key]; if (c) push({ text: c.text, who: c.who, file: "voice/" + key + ".mp3" }); },
+      stop() {
+        queue.length = 0;
+        if (synth) synth.cancel();
+        if (player) { player.onended = null; player.onerror = null; try { player.pause(); } catch (e) { /* ignore */ } player = null; }
+        if (current) { current = null; Sound.duck(false); }
+      }
+    };
+  })();
+
+  /* ================================================================ world */
+  const PARTS = [
+    { id: "planks", label: "Oak planks", need: 3 },
+    { id: "tools", label: "Chisel and nails", need: 1 },
+    { id: "rope", label: "Bell rope", need: 1 },
+    { id: "canvas", label: "Canvas sheet", need: 1 },
+    { id: "pitch", label: "Pot of pitch", need: 1 }
+  ];
+  const PLACES = {
+    cell:     { name: "Your cell", kind: "Cell block D", exits: { e: "corridor" } },
+    corridor: { name: "The corridor", kind: "Cell block D", exits: { w: "cell", n: "chapel", s: "laundry", e: "yard" } },
+    yard:     { name: "The exercise yard", kind: "Under the tower", exits: { w: "corridor", n: "workshop", e: "kitchen", s: "wall" } },
+    workshop: { name: "The carpentry shop", kind: "Work detail", exits: { s: "yard" } },
+    kitchen:  { name: "The galley", kind: "Work detail", exits: { w: "yard" } },
+    laundry:  { name: "The wash house", kind: "Work detail", exits: { n: "corridor" } },
+    chapel:   { name: "The chapel", kind: "Sunday only", exits: { s: "corridor" } },
+    wall:     { name: "The sea wall", kind: "Outside, exposed", exits: { n: "yard", s: "cave" } },
+    cave:     { name: "The cave under the cliff", kind: "Your boatyard", exits: { n: "wall" } }
+  };
+  /* where each place sits on the chart, in percent of the map picture */
+  const MAP_PINS = { cell: [41.6, 26.5], corridor: [53.5, 25.5], chapel: [63.5, 36], laundry: [31.5, 42], yard: [48.5, 40],
+                     workshop: [42.5, 55.5], kitchen: [55, 55.5], wall: [61, 64], cave: [38.8, 75] };
+  const COMPASS = { n: "North", e: "East", s: "South", w: "West" };
+  const WATCHES = ["Dawn", "Day", "Dusk", "Night"];
+  const TOD = ["dawn", "day", "dusk", "night"];
+
+  const state0 = () => ({
+    day: 1, watch: 2, suspicion: 8, stamina: 100,
+    place: "cell", parts: { planks: 0, tools: 0, rope: 0, canvas: 0, pitch: 0 },
+    stash: { planks: 0, tools: 0, rope: 0, canvas: 0, pitch: 0 },
+    build: 0, log: [], over: false, guardMood: 0, knowTide: false, cellmate: false, hidden: true, warned: false,
+    heard: {}, endArt: null
+  });
+  let S = state0();
+  let weather = "clear";
+
+  const springTide = day => day % 6 === 0;
+  const isNight = () => S.watch === 3;
+  function partsDone() { return PARTS.every(p => S.stash[p.id] >= p.need); }
+  function partsHeld() { return PARTS.reduce((n, p) => n + S.parts[p.id], 0); }
+  function buildPct() { return Math.round((S.build / 5) * 100); }
+
+  /* ================================================================ pictures */
+  const SCENE_ART = { cell: "cell", corridor: "corridor", yard: "yard", wall: "wall", workshop: "workshop",
+                      kitchen: "kitchen", laundry: "laundry", chapel: "chapel" };
+  const artFor = () => S.endArt || (S.place === "cave" ? "cave" + Math.min(5, S.build) : SCENE_ART[S.place] || "yard");
+  let artShown = "", artFront = 0;
+  function setArt(key) {
+    if (key === artShown) return;
+    artShown = key;
+    const imgs = [$("art-a"), $("art-b")], back = imgs[1 - artFront], front = imgs[artFront];
+    const src = "art/" + key + ".jpg";
+    const swap = () => {
+      if (artShown !== key) return;
+      back.classList.add("show"); front.classList.remove("show"); artFront = 1 - artFront;
+    };
+    back.onload = swap; back.onerror = swap;
+    if (back.getAttribute("src") === src && back.complete) swap(); else back.src = src;
+  }
+  function preload() {
+    const keys = ["cell", "corridor", "yard", "wall", "workshop", "kitchen", "laundry", "chapel", "cave0", "cave1", "cave2", "cave3", "cave4", "cave5",
+      "v_planks", "v_tools", "v_rope", "v_canvas", "v_pitch", "v_listen", "v_carry", "v_beam", "v_launch", "v_storm", "dawn", "caught", "drowned", "transfer", "map",
+      ...Object.keys(PEOPLE).map(p => "p_" + p)];
+    let i = 0;
+    const next = () => { if (i >= keys.length) return; const im = new Image(); im.onload = im.onerror = next; im.src = "art/" + keys[i++] + ".jpg"; };
+    next(); next();
+  }
+
+  /* close-up card over the scene */
+  let cardTimer = null;
+  function showCard(key, caption, wide) {
+    const card = $("card");
+    $("card-img").src = "art/" + key + ".jpg";
+    $("card-cap").textContent = caption || "";
+    card.classList.toggle("wide", !!wide);
+    card.classList.remove("on"); void card.offsetWidth; card.classList.add("on");
+    clearTimeout(cardTimer);
+    cardTimer = setTimeout(() => card.classList.remove("on"), 4200);
+  }
+  $("card").addEventListener("click", () => { clearTimeout(cardTimer); $("card").classList.remove("on"); });
+
+  /* a character speaking: portrait on the scene, a line in the ledger, and their own voice */
+  let coTimer = null;
+  function speak(key, who, text, quiet) {
+    const c = (key && CHARS[key]) || { who, text };
+    const co = $("callout");
+    $("co-face").src = "art/p_" + c.who + ".jpg";
+    $("co-name").textContent = PEOPLE[c.who] || "";
+    $("co-text").textContent = quiet ? c.text : "“" + c.text + "”";
+    co.classList.remove("on"); void co.offsetWidth; co.classList.add("on");
+    clearTimeout(coTimer);
+    coTimer = setTimeout(() => co.classList.remove("on"), 4600);
+    logLine(c.text, "", c.who, !quiet);
+    if (key && CHARS[key]) Voice.line(key);
+  }
+
+  /* ================================================================ effects layer */
+  const FX = (() => {
+    const cv = $("fx"), g = cv.getContext("2d"), W = 960, H = 540;
+    const PFX = {
+      cell:     { glows: [[62, 14, 0.5, "moon"]], motes: [48, 12, 74, 86] },
+      corridor: { glows: [[29, 39, 0.55, "lamp"], [60, 74, 0.35, "lamp"], [71, 30, 0.25, "lamp"]], motes: [20, 20, 80, 80] },
+      yard:     { outside: true, tower: [64, 5], fog: true, glows: [[37, 53, 0.35, "lamp"]] },
+      workshop: { glows: [[46, 44, 0.6, "lamp"]], motes: [25, 10, 80, 75] },
+      kitchen:  { glows: [[34, 30, 0.5, "lamp"], [26, 54, 0.45, "fire"]], steam: [[27, 50]], embers: [[27, 56]] },
+      laundry:  { glows: [[58, 31, 0.45, "lamp"], [61, 73, 0.4, "fire"]], steam: [[65, 42], [45, 58]] },
+      chapel:   { glows: [[34, 47, 0.35, "lamp"], [30, 26, 0.3, "moon"]], motes: [20, 8, 62, 70] },
+      wall:     { outside: true, tower: [68, 4], fog: true, spray: [82, 62] },
+      cave:     { outside: true, glows: [[59, 76, 0.75, "fire"], [70, 80, 0.4, "lamp"]], embers: [[59, 73]], fog: true }
+    };
+    const parts = [];
+    let flashA = 0, nextBolt = 0, last = performance.now(), T = 0;
+    const COL = { lamp: "232,163,61", fire: "240,130,50", moon: "170,200,220" };
+
+    function spawn(cfg, dt) {
+      if (calm) return;
+      if (cfg.motes && Math.random() < dt * 3 && parts.length < 140) {
+        const [x0, y0, x1, y1] = cfg.motes;
+        parts.push({ k: "mote", x: R(x0, x1) / 100 * W, y: R(y0, y1) / 100 * H, vx: R(-6, 6), vy: R(-4, 3), life: R(5, 10), age: 0, r: R(0.8, 1.8) });
+      }
+      (cfg.embers || []).forEach(([x, y]) => {
+        if (Math.random() < dt * 9 && parts.length < 160) parts.push({ k: "ember", x: x / 100 * W + R(-10, 10), y: y / 100 * H, vx: R(-10, 10), vy: R(-70, -35), life: R(1, 2.4), age: 0, r: R(0.8, 1.8) });
+      });
+      (cfg.steam || []).forEach(([x, y]) => {
+        if (Math.random() < dt * 2.2 && parts.length < 160) parts.push({ k: "steam", x: x / 100 * W + R(-14, 14), y: y / 100 * H, vx: R(-6, 6), vy: R(-22, -12), life: R(3, 5), age: 0, r: R(18, 30) });
+      });
+      if (cfg.fog && Math.random() < dt * 0.35 && parts.length < 160) {
+        parts.push({ k: "fog", x: -200, y: R(0.35, 0.9) * H, vx: R(10, 22), vy: 0, life: 80, age: 0, r: R(140, 240) });
+      }
+      if (cfg.spray && weather === "storm" && Math.random() < dt * 3) {
+        const [x, y] = cfg.spray;
+        for (let i = 0; i < 6; i++) parts.push({ k: "spray", x: x / 100 * W + R(-60, 60), y: y / 100 * H, vx: R(-60, 30), vy: R(-160, -60), life: R(0.8, 1.4), age: 0, r: R(1, 2.4) });
+      }
+    }
+    function draw(nowMs) {
+      const dt = Math.min(0.05, (nowMs - last) / 1000); last = nowMs; T += dt;
+      g.clearRect(0, 0, W, H);
+      const ended = S.over && S.endArt;
+      const cfg = ended ? {} : (PFX[S.place] || {});
+      const night = !ended && S.watch === 3, dusk = !ended && S.watch === 2;
+
+      /* lamps, fires and moonlight breathe */
+      g.globalCompositeOperation = "lighter";
+      (cfg.glows || []).forEach(([x, y, s, kind], i) => {
+        const flick = kind === "moon" ? 1 : 0.82 + 0.12 * Math.sin(T * 7 + i * 3) + 0.08 * Math.sin(T * 13.1 + i);
+        const a = s * flick * (night ? 0.55 : dusk ? 0.4 : 0.28), rad = (kind === "moon" ? 0.34 : 0.26) * W;
+        const gr = g.createRadialGradient(x / 100 * W, y / 100 * H, 4, x / 100 * W, y / 100 * H, rad);
+        gr.addColorStop(0, "rgba(" + COL[kind] + "," + a.toFixed(3) + ")"); gr.addColorStop(1, "rgba(" + COL[kind] + ",0)");
+        g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      });
+      g.globalCompositeOperation = "source-over";
+
+      /* the searchlight */
+      if (cfg.tower && (night || dusk)) {
+        const [tx, ty] = cfg.tower, cx = tx / 100 * W, cy = ty / 100 * H;
+        const ang = Math.PI * 0.5 + Math.sin(T * 0.45) * 1.25;
+        g.save(); g.translate(cx, cy); g.rotate(ang);
+        const gr = g.createLinearGradient(0, 0, W * 1.1, 0);
+        gr.addColorStop(0, "rgba(244,232,190," + (night ? 0.34 : 0.2) + ")"); gr.addColorStop(1, "rgba(244,232,190,0)");
+        g.fillStyle = gr; g.beginPath(); g.moveTo(0, 0); g.lineTo(W * 1.1, -H * 0.16); g.lineTo(W * 1.1, H * 0.16); g.closePath(); g.fill();
+        const core = g.createRadialGradient(0, 0, 1, 0, 0, 26); core.addColorStop(0, "rgba(255,244,210,.95)"); core.addColorStop(1, "rgba(255,244,210,0)");
+        g.fillStyle = core; g.beginPath(); g.arc(0, 0, 26, 0, Math.PI * 2); g.fill();
+        g.restore();
+      }
+
+      spawn(cfg, dt);
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        p.age += dt; p.x += p.vx * dt; p.y += p.vy * dt;
+        if (p.k === "spray") p.vy += 220 * dt;
+        if (p.age > p.life || p.x > W + 300) { parts.splice(i, 1); continue; }
+        const life = p.age / p.life, fade = Math.sin(Math.min(1, life) * Math.PI);
+        if (p.k === "mote") { g.fillStyle = "rgba(240,225,190," + (0.5 * fade).toFixed(3) + ")"; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); }
+        else if (p.k === "ember") { g.fillStyle = "rgba(255," + Math.round(150 + 80 * (1 - life)) + ",60," + (0.9 * (1 - life)).toFixed(3) + ")"; g.fillRect(p.x, p.y, p.r, p.r); p.vx += R(-40, 40) * dt; }
+        else if (p.k === "steam") { const r = p.r * (1 + life * 1.6), gr = g.createRadialGradient(p.x, p.y, 1, p.x, p.y, r); gr.addColorStop(0, "rgba(220,228,230," + (0.13 * fade).toFixed(3) + ")"); gr.addColorStop(1, "rgba(220,228,230,0)"); g.fillStyle = gr; g.fillRect(p.x - r, p.y - r, r * 2, r * 2); }
+        else if (p.k === "fog") { const gr = g.createRadialGradient(p.x, p.y, 1, p.x, p.y, p.r); gr.addColorStop(0, "rgba(180,200,206," + (night ? 0.07 : 0.1).toFixed(3) + ")"); gr.addColorStop(1, "rgba(180,200,206,0)"); g.fillStyle = gr; g.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); }
+        else if (p.k === "spray") { g.fillStyle = "rgba(225,235,238," + (0.8 * (1 - life)).toFixed(3) + ")"; g.fillRect(p.x, p.y, p.r, p.r); }
+      }
+
+      /* rain outside */
+      if (!ended && cfg.outside && (weather === "storm" || weather === "rain")) {
+        g.strokeStyle = weather === "storm" ? "rgba(200,215,220,.42)" : "rgba(200,215,220,.26)";
+        g.lineWidth = 1;
+        const drops = weather === "storm" ? 220 : 90, slant = weather === "storm" ? 9 : 4, fall = calm ? 0 : T * 700;
+        g.beginPath();
+        for (let i = 0; i < drops; i++) {
+          const x = (i * 97 + fall * 0.25 * slant / 4) % W, y = (i * 53 + fall) % H;
+          g.moveTo(x, y); g.lineTo(x - slant, y + 16);
+        }
+        g.stroke();
+      }
+
+      /* lightning */
+      if (!ended && weather === "storm" && !calm) {
+        if (!nextBolt) nextBolt = T + R(6, 14);
+        if (T > nextBolt) {
+          flashA = cfg.outside ? 0.55 : 0.22; nextBolt = T + R(10, 26);
+          setTimeout(() => Sound.play("thunder"), R(300, 1400));
+        }
+      }
+      if (flashA > 0.01) { g.fillStyle = "rgba(225,235,245," + flashA.toFixed(3) + ")"; g.fillRect(0, 0, W, H); flashA *= Math.pow(0.02, dt); }
+
+      /* danger at the edges when the warders are close */
+      if (!S.over && S.suspicion >= 70) {
+        const a = 0.18 + 0.12 * Math.sin(T * 5);
+        const gr = g.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, H * 1.05);
+        gr.addColorStop(0, "rgba(120,20,10,0)"); gr.addColorStop(1, "rgba(150,30,20," + a.toFixed(3) + ")");
+        g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      }
+      const vig = g.createRadialGradient(W / 2, H / 2, H * 0.38, W / 2, H / 2, H * 1.02);
+      vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(3,8,10,.72)");
+      g.fillStyle = vig; g.fillRect(0, 0, W, H);
+    }
+    function loop(t) { draw(t); requestAnimationFrame(loop); }
+    return { start() { requestAnimationFrame(loop); }, clear() { parts.length = 0; } };
+  })();
+
+  /* ================================================================ log */
+  /* a line in the ledger; with a face when someone is involved, and their name only when they speak */
+  function lineEl(l, fresh) {
+    const p = document.createElement("p");
+    p.className = (fresh ? "new " : "old ") + (l.tone || "") + (l.who ? " char" : "");
+    if (l.who) {
+      const img = document.createElement("img"); img.src = "art/p_" + l.who + ".jpg"; img.alt = PEOPLE[l.who] || "";
+      const span = document.createElement("span");
+      if (l.said) { const name = document.createElement("i"); name.textContent = PEOPLE[l.who] || ""; span.appendChild(name); }
+      span.appendChild(document.createTextNode(l.said ? "“" + l.text + "”" : l.text));
+      p.append(img, span);
+    } else p.textContent = l.text;
+    return p;
+  }
+  function logLine(text, tone, who, said) {
+    const l = { text, tone, who: who || null, said: !!said };
+    S.log.push(l);
+    const box = $("log");
+    box.querySelectorAll("p.new").forEach(p => p.classList.replace("new", "old"));
+    box.appendChild(lineEl(l, true));
+    box.scrollTop = box.scrollHeight;
+    while (box.children.length > 40) box.removeChild(box.firstChild);
+  }
+  /* spoken may differ from the written line, so every spoken line stays a fixed, recorded sentence */
+  function say(text, tone = "", spoken = text, who = null) {
+    if (S.over && !finishing) return;
+    logLine(text, tone, who);
+    Voice.say(spoken);
+  }
+  function chapter(title) {
+    Voice.say(title);
+    const box = $("log"), p = document.createElement("p");
+    p.className = "new";
+    const s = document.createElement("span"); s.className = "who"; s.textContent = title;
+    p.appendChild(s); box.appendChild(p); box.scrollTop = box.scrollHeight;
+  }
+  const once = key => { if (S.heard[key]) return false; S.heard[key] = true; return true; };
+
+  /* ================================================================ state */
+  function suspicion(n, why, who) {
+    S.suspicion = Math.max(0, Math.min(100, S.suspicion + n));
+    if (n > 0 && why) say(why, "bad", why, who);
+    if (n > 0 && !S.warned && S.suspicion >= 60 && S.suspicion < 100) {
+      S.warned = true;
+      say("The warders have started watching you. Lie low for a while: sit through a service, or sleep in your own bunk.", "bad");
+    }
+    if (S.suspicion < 45) S.warned = false;
+    if (S.suspicion >= 100) {
+      speak("c_governor");
+      return caught("The governor has been reading your file all week. Two warders take you by the elbows before you reach the door.");
+    }
+    Sound.heartbeat(S.suspicion >= 70 && !S.over);
+    return false;
+  }
+  function spend(stam) {
+    S.stamina = Math.max(0, S.stamina - stam);
+    if (S.stamina <= 0) {
+      S.stamina = 12;
+      suspicion(12, "You black out over the work bench. The orderly writes your name down.");
+    }
+  }
+  function advance(watches = 1) {
+    for (let i = 0; i < watches; i++) {
+      S.watch++;
+      if (S.watch > 3) {
+        S.watch = 0; S.day++;
+        S.stamina = Math.min(100, S.stamina + 22);
+        S.suspicion = Math.max(0, S.suspicion - 7);
+        weather = Math.random() < 0.22 ? "storm" : Math.random() < 0.4 ? "rain" : "clear";
+        if (S.day > 12) return transferred();
+        chapter("Night " + S.day + " of 12");
+        if (springTide(S.day)) say("Word passes down the block: spring tide tonight. The water will stand high and slack after dark.", "good");
+        if (weather === "storm") {
+          say("A storm crowds in from the north west. The gutters roar all day.");
+          showCard("v_storm", "Storm over the sea wall", true);
+          Sound.play("thunder");
+        }
+      }
+    }
+    randomEvent();
+    render();
+    return false;
+  }
+  function randomEvent() {
+    if (S.over) return;
+    const r = Math.random();
+    const risky = S.place !== "cell" && S.place !== "corridor";
+    if (isNight() && S.place === "wall" && r < 0.35) {
+      Sound.play("alarm"); flash();
+      showCard("v_beam", "Pinned in the beam");
+      speak("c_warder_beam");
+      suspicion(14, "The beam swings back early and pins you against the stone. You hold still until it passes.");
+    } else if (r < 0.1 && risky) {
+      Sound.play("door");
+      speak("c_warder_count");
+      suspicion(9, "A warder counts heads out of turn. You are where you should not be.");
+    } else if (r < 0.16) {
+      Sound.play("gull");
+      say("Gulls quarrel over the rubbish behind the galley. Nobody looks up.");
+    } else if (r < 0.2 && S.suspicion > 30) {
+      say("Kessel, who informs for tobacco, watches you from the far bench.", "bad", undefined, "kessel");
+      if (once("kessel")) speak("c_kessel");
+      S.guardMood++;
+    } else if (r < 0.26 && weather === "storm") {
+      Sound.play("creak");
+      say("The sea throws itself at the wall. Somewhere a shutter tears loose.");
+    }
+  }
+  function flash() {
+    const f = $("flash"), s = $("scene");
+    if (f.animate) f.animate([{ opacity: 0 }, { opacity: .35 }, { opacity: 0 }], { duration: 600 });
+    if (!calm) { s.classList.add("shake"); setTimeout(() => s.classList.remove("shake"), 520); }
+  }
+
+  /* ================================================================ endings */
+  let finishing = false;
+  function finish(title, text, tone) {
+    if (S.over) return true;
+    S.over = true; finishing = true;
+    Sound.heartbeat(false);
+    $("hotspots").innerHTML = ""; $("compass").innerHTML = "";
+    hideTip();
+    const box = $("choices"); box.innerHTML = "";
+    const div = document.createElement("div"); div.className = "end";
+    const h = document.createElement("h2"); h.textContent = title;
+    const p = document.createElement("p"); p.textContent = text;
+    const b = document.createElement("button"); b.className = "go"; b.type = "button"; b.textContent = "Take the twelve nights again";
+    b.addEventListener("click", () => { Voice.stop(); restart(); });
+    div.append(h, p, b); box.appendChild(div);
+    say(title, tone);
+    Voice.say(text);
+    finishing = false;
+    render();
+    return true;
+  }
+  const caught = why => { Sound.sting("lose"); flash(); S.endArt = "caught"; Sound.place("cell", true, "clear"); return finish("Caught", why + " The solitary block has no window, and the transfer boat leaves without you.", "bad"); };
+  const drowned = () => { Sound.sting("lose"); S.endArt = "drowned"; return finish("The sea takes you", "Two hundred metres out, the swell turns the boat beam on. The cold does the rest. They find the wreck on the shingle at dawn.", "bad"); };
+  const transferred = () => { Sound.sting("lose"); S.endArt = "transfer"; speak("c_warder_transfer"); return finish("The transfer", "On the thirteenth morning they chain you to seven other men and row you to the mainland prison, where nobody has ever heard of a tide.", "bad"); };
+
+  /* ================================================================ actions */
+  const ACTIONS = [
+    { id: "sleep", place: "cell", label: "Sleep until the bell", cost: "One watch · strength up", when: () => true,
+      run() { say("You sleep with your boots on, the way everyone does here."); spend(-18); advance(1); } },
+    { id: "loose-stone", place: "cell", label: "Work the loose stone under your bunk", cost: "One watch · hides your contraband", when: () => !S.hidden,
+      run() { Sound.play("clank"); say("You lever the stone back and tuck everything beneath it. Nothing under your mattress now.", "good"); S.hidden = true; suspicion(-6); advance(1); } },
+    { id: "listen", place: "corridor", label: "Listen at the warders' room", cost: "One watch · risky", when: () => !S.knowTide,
+      run() {
+        Sound.play("step");
+        if (Math.random() < 0.7) {
+          S.knowTide = true; Sound.play("paper");
+          showCard("v_listen", "The tide table, read aloud");
+          say("Through the door: the tide table for the month, read aloud for the harbour boat. You memorise the spring tides.", "good");
+        } else {
+          Sound.play("door"); speak("c_warder_door");
+          if (suspicion(12, "The door opens as you lean in. You salute and keep walking. He remembers faces.")) return;
+        }
+        advance(1);
+      } },
+    { id: "cellmate", place: "corridor", label: "Sound out Voss, the old smuggler", cost: "One watch", when: () => !S.cellmate,
+      run() {
+        say("Voss has been here eleven years and has the hands of a boatwright. He hears you out, then names his price: he comes with you.", "", undefined, "voss");
+        speak("c_voss_intro");
+        S.cellmate = true; suspicion(4); advance(1);
+      } },
+    { id: "planks", place: "workshop", label: "Lift a plank from the coffin stock", cost: "One watch · strength 8", when: () => S.parts.planks < 3,
+      run() {
+        Sound.play("hammer"); spend(8);
+        S.parts.planks++; S.hidden = false;
+        showCard("v_planks", "Oak for coffin lids");
+        say("Oak, seasoned, cut for coffin lids. You walk out with it strapped inside your trouser leg. " + (3 - S.parts.planks > 0 ? (3 - S.parts.planks) + " more will do it." : "That is the last one."), "good",
+            "Oak, seasoned, cut for coffin lids. You walk out with it strapped inside your trouser leg.");
+        if (once("foreman_planks")) speak("c_foreman_planks");
+        if (suspicion(9, "The foreman counts the stock twice.", "foreman")) return;
+        advance(1);
+      } },
+    { id: "tools", place: "workshop", label: "Palm a chisel and a fist of nails", cost: "One watch", when: () => S.parts.tools < 1,
+      run() {
+        Sound.play("clank"); S.parts.tools = 1; S.hidden = false;
+        showCard("v_tools", "Chisel down the sleeve");
+        say("Chisel down your sleeve, nails in your sock. You walk stiff as a saint.", "good");
+        speak("c_foreman_tools");
+        if (suspicion(8, "Tools are counted at the bell.", "foreman")) return;
+        advance(1);
+      } },
+    { id: "canvas", place: "laundry", label: "Cut canvas from a mail sack", cost: "One watch", when: () => S.parts.canvas < 1,
+      run() {
+        Sound.play("rip"); S.parts.canvas = 1; S.hidden = false;
+        showCard("v_canvas", "A mail sack becomes a sail");
+        say("A sack becomes a sail, folded flat against your back under the shirt.", "good");
+        speak("c_laundress");
+        if (suspicion(7, "The laundress looks at the pile, then at you.", "laundress")) return;
+        advance(1);
+      } },
+    { id: "pitch", place: "kitchen", label: "Boil fat and pitch into a sealing pot", cost: "One watch · strength 10", when: () => S.parts.pitch < 1,
+      run() {
+        Sound.play("boil"); spend(10); S.parts.pitch = 1; S.hidden = false;
+        showCard("v_pitch", "Pitch and fat, cooked down");
+        say("Pitch from the roof detail, fat from the pans, cooked down in a can. It stinks of every promise you have made yourself.", "good");
+        speak(null, "cook", "He says nothing. He keeps stirring.", true);
+        if (suspicion(6, "The cook says nothing, which is worse.")) return;
+        advance(1);
+      } },
+    { id: "food", place: "kitchen", label: "Eat properly for once", cost: "One watch · strength up", when: () => true,
+      run() { spend(-16); say("Cold porridge, bacon fat, two eggs meant for the governor."); advance(1); } },
+    { id: "rope", place: "chapel", label: "Cut down the bell rope", cost: "One watch · loud", when: () => S.parts.rope < 1,
+      run() {
+        Sound.play("rope"); Sound.play("bell");
+        S.parts.rope = 1; S.hidden = false;
+        showCard("v_rope", "The bell speaks once");
+        say("The bell speaks once as the rope comes free. You stand in the dark and count to two hundred.", "good");
+        if (suspicion(15, "Somebody heard that.")) return;
+        advance(1);
+      } },
+    { id: "pray", place: "chapel", label: "Sit through the whole service", cost: "One watch · suspicion down", when: () => true,
+      run() { say("You sing the hymns loudly enough to be remembered as harmless."); suspicion(-10); advance(1); } },
+    { id: "carry", place: "wall", label: "Carry contraband down to the cave", cost: "One watch · strength 12 · exposed", when: () => partsHeld() > 0 && S.place === "wall",
+      run() {
+        spend(12); Sound.play("step");
+        let load = 0;
+        PARTS.forEach(pt => { load += S.parts[pt.id]; S.stash[pt.id] += S.parts[pt.id]; S.parts[pt.id] = 0; });
+        showCard("v_carry", "Over the parapet, seaward side");
+        say("Over the wall on the seaward side, down the goat path with " + load + " piece" + (load === 1 ? "" : "s") + " strapped to you. It all goes under the overhang with the rest.", "good",
+            "Over the wall on the seaward side, down the goat path.");
+        S.place = "cave"; S.hidden = true;
+        if (!isNight() && suspicion(18, "In daylight. Anyone on the tower need only turn around.")) return;
+        advance(1);
+      } },
+    { id: "build", place: "cave", label: () => "Work on the boat (" + S.build + " of 5)", cost: "One watch · strength 14", when: () => S.build < 5,
+      run() {
+        if (!partsDone()) {
+          const short = PARTS.filter(pt => S.stash[pt.id] < pt.need).map(pt => pt.label.toLowerCase() + " (" + S.stash[pt.id] + " of " + pt.need + ")");
+          say("Not with what is down here. Still missing: " + short.join(", ") + ".", "bad", "Not with what is down here. Still missing:");
+          return;
+        }
+        Sound.play("hammer"); spend(14);
+        S.build++;
+        const lines = [
+          "You lay a keel from the longest plank and scarf the ends by feel.",
+          "Ribs bent over a driftwood fire, lashed with bell rope.",
+          "The hull closes. In the dark it looks like something a child drew.",
+          "Pitch over every seam, worked in with your thumbs until they blister.",
+          "The sail is bent to a spar cut from the roof batten. She is finished."
+        ];
+        say(lines[S.build - 1], "good");
+        if (S.cellmate && S.build === 3) { say("Voss shows you the trick of the garboard seam. Eleven years, and his hands still know it.", "", undefined, "voss"); speak("c_voss_build"); }
+        advance(1);
+      } },
+    { id: "rest-cave", place: "cave", label: () => S.watch === 3 ? "Sleep through to the next night" : "Lie up in the cave until dark",
+      cost: () => S.watch === 3 ? "Four watches · missed at the night count" : "Until night", when: () => true,
+      run() {
+        say("You sleep under the upturned hull with the sea two metres away.");
+        spend(-10);
+        if (S.watch === 3) {
+          spend(-10);
+          if (suspicion(8, "Your bunk is empty at the night count. Someone will have to explain it.")) return;
+          advance(4);
+        } else advance(3 - S.watch);
+      } },
+    { id: "launch", place: "cave", label: "Launch the boat",
+      cost: () => {
+        if (!isNight()) return "Only after dark";
+        if (weather === "storm") return "Tonight: storm · the sea will likely take you";
+        if (springTide(S.day)) return "Tonight: spring tide · the best chance you will get";
+        return (weather === "rain" ? "Tonight: rain, neap tide" : "Tonight: neap tide") + " · a fair chance at best";
+      },
+      when: () => S.build >= 5,
+      run() { launch(); } }
+  ];
+
+  /* Where you can click on the painting. Percent of the picture, so they scale with it. */
+  const HOTSPOTS = {
+    cell: [
+      { x: 4, y: 26, w: 32, h: 44, label: "The iron bunk", act: "sleep" },
+      { x: 30, y: 64, w: 24, h: 24, label: "The loose flagstone", act: "loose-stone" },
+      { x: 84, y: 24, w: 15, h: 60, label: "The cell door", move: "corridor" }
+    ],
+    corridor: [
+      { x: 4, y: 12, w: 14, h: 76, label: "Back to your cell", move: "cell" },
+      { x: 30, y: 30, w: 15, h: 42, label: "Voss, behind his bars", act: "cellmate" },
+      { x: 54, y: 28, w: 14, h: 46, label: "The warders' room", act: "listen" },
+      { x: 82, y: 14, w: 15, h: 66, label: "Out to the yard", move: "yard" }
+    ],
+    yard: [
+      { x: 1, y: 32, w: 25, h: 48, label: "The carpentry shop", move: "workshop" },
+      { x: 30, y: 34, w: 18, h: 30, label: "The galley", move: "kitchen" },
+      { x: 64, y: 44, w: 10, h: 20, label: "Back inside", move: "corridor" },
+      { x: 73, y: 60, w: 25, h: 35, label: "Steps up to the sea wall", move: "wall" }
+    ],
+    wall: [
+      { x: 3, y: 32, w: 17, h: 34, label: "Back to the yard", move: "yard" },
+      { x: 31, y: 30, w: 13, h: 16, label: "The gap in the parapet: carry the load down", act: "carry" },
+      { x: 54, y: 50, w: 30, h: 42, label: "The goat path down", move: "cave" }
+    ],
+    workshop: [
+      { x: 12, y: 26, w: 28, h: 46, label: "Coffin stock, seasoned oak", act: "planks" },
+      { x: 46, y: 50, w: 30, h: 30, label: "The tool rack", act: "tools" },
+      { x: 84, y: 22, w: 15, h: 60, label: "Back to the yard", move: "yard" }
+    ],
+    kitchen: [
+      { x: 10, y: 34, w: 28, h: 30, label: "Pitch and fat on the stove", act: "pitch" },
+      { x: 44, y: 28, w: 26, h: 60, label: "The governor's larder", act: "food" },
+      { x: 80, y: 22, w: 16, h: 68, label: "Back to the yard", move: "yard" }
+    ],
+    laundry: [
+      { x: 1, y: 50, w: 36, h: 44, label: "A pile of mail sacks", act: "canvas" },
+      { x: 81, y: 24, w: 15, h: 58, label: "Back to the corridor", move: "corridor" }
+    ],
+    chapel: [
+      { x: 42, y: 12, w: 14, h: 54, label: "The bell rope", act: "rope" },
+      { x: 8, y: 60, w: 34, h: 28, label: "A bench at the back", act: "pray" },
+      { x: 84, y: 24, w: 15, h: 56, label: "Back to the corridor", move: "corridor" }
+    ],
+    cave: [
+      { x: 1, y: 30, w: 14, h: 50, label: "Back up the path", move: "wall" },
+      { x: 49, y: 14, w: 16, h: 28, label: "The water", act: "launch" },
+      { x: 22, y: 46, w: 36, h: 38, label: "The boat", act: "build" },
+      { x: 55, y: 66, w: 9, h: 16, label: "The driftwood fire", act: "rest-cave" }
+    ]
+  };
+
+  function showTip(spot, cost) {
+    const tip = $("tip");
+    tip.innerHTML = "";
+    const b = document.createElement("b"); b.textContent = spot.label;
+    const s = document.createElement("span"); s.textContent = cost;
+    tip.append(b, s);
+    tip.style.left = Math.min(86, Math.max(14, spot.x + spot.w / 2)) + "%";
+    tip.style.top = Math.max(18, spot.y + spot.h / 2) + "%";
+    tip.classList.add("on");
+  }
+  const hideTip = () => $("tip").classList.remove("on");
+
+  function goTo(id) {
+    if (S.over || !id) return;
+    Sound.play("step");
+    S.place = id;
+    say("You go to " + PLACES[id].name.toLowerCase() + ".", "", "");
+    if (id === "wall" && !isNight() && suspicion(6, "You cross the open ground in daylight.")) return;
+    advance(1);
+    render();
+  }
+
+  function drawCompass() {
+    const box = $("compass");
+    box.innerHTML = "";
+    if (S.over) return;
+    ["n", "e", "s", "w"].forEach(dir => {
+      const to = PLACES[S.place].exits[dir];
+      const b = document.createElement("button");
+      b.type = "button"; b.disabled = !to;
+      const k = document.createElement("b"); k.textContent = COMPASS[dir];
+      const n = document.createElement("span"); n.textContent = to ? PLACES[to].name : "stone";
+      b.append(k, n);
+      if (to) b.addEventListener("click", () => goTo(to));
+      box.appendChild(b);
+    });
+  }
+
+  const touchUI = !!(window.matchMedia && window.matchMedia("(hover: none)").matches);
+  let armed = null; /* on phones the first tap names a spot, the second tap does it */
+  function drawHotspots() {
+    armed = null;
+    const layer = $("hotspots");
+    layer.innerHTML = "";
+    hideTip();
+    if (S.over) return;
+    (HOTSPOTS[S.place] || []).forEach(spot => {
+      let run, cost, cls = "hot";
+      if (spot.act) {
+        const a = ACTIONS.find(x => x.id === spot.act && x.place === S.place);
+        if (!a || !a.when()) return;
+        cost = typeof a.cost === "function" ? a.cost() : a.cost;
+        if (spot.act === "launch") cls += " go";
+        run = () => a.run();
+      } else {
+        const dir = Object.keys(PLACES[S.place].exits).find(d => PLACES[S.place].exits[d] === spot.move);
+        cost = (dir ? COMPASS[dir] + " · " : "") + "one watch";
+        cls += " move";
+        run = () => goTo(spot.move);
+      }
+      const b = document.createElement("button");
+      b.className = cls; b.type = "button";
+      b.style.cssText = "left:" + spot.x + "%;top:" + spot.y + "%;width:" + spot.w + "%;height:" + spot.h + "%";
+      b.setAttribute("aria-label", spot.label + ": " + cost);
+      b.addEventListener("mouseenter", () => showTip(spot, cost));
+      b.addEventListener("focus", () => showTip(spot, cost));
+      b.addEventListener("mouseleave", () => { if (!touchUI) hideTip(); });
+      b.addEventListener("blur", hideTip);
+      b.addEventListener("click", () => {
+        if (S.over) return;
+        if (touchUI && armed !== spot) {
+          armed = spot;
+          layer.querySelectorAll(".hot.armed").forEach(x => x.classList.remove("armed"));
+          b.classList.add("armed");
+          showTip(spot, cost);
+          return;
+        }
+        armed = null; hideTip();
+        run(); render();
+      });
+      layer.appendChild(b);
+    });
+  }
+
+  function launch() {
+    if (!isNight()) { say("In daylight the tower would see you before the keel was wet. Wait for dark.", "bad"); return; }
+    Sound.play("splash");
+    let odds = 0.3;
+    if (springTide(S.day)) odds += 0.35;
+    if (S.knowTide) odds += 0.1;
+    if (weather === "storm") odds -= 0.35;
+    if (weather === "clear") odds += 0.05;
+    if (S.cellmate) odds += 0.12;
+    if (S.stamina > 60) odds += 0.1;
+    odds -= S.suspicion / 400;
+
+    showCard("v_launch", "Into the black water");
+    say("You carry her down over the shingle. The water is colder than you remembered.");
+    if (Math.random() > odds) {
+      if (weather === "storm") return drowned();
+      Sound.play("alarm"); flash();
+      speak("c_warder_sea");
+      return caught("The beam finds the sail three hundred metres out, white as a signal. The harbour boat is faster than anything you built.");
+    }
+    Sound.sting("win");
+    Sound.place("sea", false, weather === "storm" ? "rain" : "clear");
+    S.endArt = "dawn";
+    if (S.cellmate) speak("c_voss_launch");
+    const how = weather === "storm"
+      ? "You run before the storm with the sail half reefed and your heart in your mouth."
+      : springTide(S.day)
+        ? "The spring tide carries you out as if it had been waiting for you."
+        : "You row until your hands split, and the island shrinks behind you.";
+    const withVoss = S.cellmate ? " Voss bails with his boot and laughs like a man half his age." : " You do it alone, which is how you planned it.";
+    return finish("Out", how + withVoss + " By first light the fort is a grey tooth on the horizon, and the mainland smells of woodsmoke and rain.", "good");
+  }
+
+  /* ================================================================ map */
+  function drawMap() {
+    const map = $("map");
+    map.querySelectorAll(".pin").forEach(p => p.remove());
+    const near = S.over ? [] : Object.values(PLACES[S.place].exits);
+    Object.keys(MAP_PINS).forEach(id => {
+      const [x, y] = MAP_PINS[id];
+      const here = id === S.place && !S.over, isNear = near.includes(id);
+      const el = document.createElement(isNear ? "button" : "span");
+      el.className = "pin " + (here ? "here" : isNear ? "near" : "far");
+      el.style.left = x + "%"; el.style.top = y + "%";
+      el.textContent = PLACES[id].name.replace(/^The /, "");
+      if (isNear) { el.type = "button"; el.addEventListener("click", () => { closeMap(); goTo(id); }); }
+      map.appendChild(el);
+    });
+  }
+  function openMap() { drawMap(); $("mapov").hidden = false; $("map-close").focus(); }
+  function closeMap() { $("mapov").hidden = true; }
+  $("map-btn").addEventListener("click", openMap);
+  $("map-close").addEventListener("click", closeMap);
+  $("mapov").addEventListener("click", e => { if (e.target === $("mapov")) closeMap(); });
+
+  /* ================================================================ render */
+  function render() {
+    $("day").textContent = Math.min(S.day, 12);
+    $("watch").textContent = WATCHES[S.watch] + (weather === "storm" ? " · storm" : weather === "rain" ? " · rain" : "");
+    const nights = $("nights"); nights.innerHTML = "";
+    for (let d = 1; d <= 12; d++) {
+      const i = document.createElement("i");
+      i.className = (d < S.day ? "past" : d === S.day ? "now" : "") + (S.knowTide && springTide(d) ? " spring" : "");
+      nights.appendChild(i);
+    }
+    $("susp-val").textContent = Math.round(S.suspicion);
+    $("susp-bar").style.width = S.suspicion + "%";
+    $("stam-val").textContent = Math.round(S.stamina);
+    $("stam-bar").style.width = S.stamina + "%";
+    $("boat-val").textContent = buildPct() + "%";
+    $("boat-bar").style.width = buildPct() + "%";
+    if (S.over && S.endArt) {
+      $("place-kind").textContent = "The end";
+      $("place-name").textContent = { dawn: "The mainland, at first light", caught: "The solitary block", drowned: "The shingle below the fort", transfer: "The transfer boat" }[S.endArt] || "";
+    } else {
+      $("place-name").textContent = PLACES[S.place].name;
+      $("place-kind").textContent = PLACES[S.place].kind;
+    }
+    $("frame").dataset.tod = S.over && S.endArt ? "end" : TOD[S.watch];
+    setArt(artFor());
+    Sound.place(S.over ? (S.endArt === "dawn" ? "sea" : "cell") : S.place, isNight(), weather);
+    Sound.mood((S.suspicion - 40) / 55, isNight());
+
+    const kit = $("kit");
+    kit.innerHTML = "";
+    PARTS.forEach(p => {
+      const li = document.createElement("li");
+      const held = S.parts[p.id], down = S.stash[p.id];
+      li.className = down >= p.need ? "have" : "missing";
+      const img = document.createElement("img"); img.src = "art/i_" + p.id + ".jpg"; img.alt = "";
+      const a = document.createElement("span"); a.textContent = p.label;
+      const b = document.createElement("span"); b.className = "st";
+      b.textContent = down >= p.need ? "in the cave" : (held ? held + " on you · " : "") + down + " of " + p.need + " down";
+      li.append(img, a, b); kit.appendChild(li);
+    });
+    const tot = document.createElement("li");
+    tot.className = "total " + (partsDone() ? "have" : "missing");
+    const missing = PARTS.reduce((n, p) => n + Math.max(0, p.need - S.parts[p.id] - S.stash[p.id]), 0);
+    const ta = document.createElement("span"); ta.textContent = partsDone() ? "Ready to build" : "Still to steal";
+    const tb = document.createElement("span"); tb.className = "st"; tb.textContent = partsDone() ? "all of it is down there" : missing + " piece" + (missing === 1 ? "" : "s");
+    tot.append(ta, tb); kit.appendChild(tot);
+
+    const tide = $("tide");
+    tide.className = "tide" + (springTide(S.day) ? " spring" : "");
+    tide.innerHTML = "";
+    const tl = document.createElement("div");
+    tl.innerHTML = springTide(S.day) ? "Tide: <b>spring, high and slack after dark</b>" : "Tide: <b>neap</b>, the race off the point runs hard";
+    const nx = document.createElement("div");
+    const until = 6 - (S.day % 6 || 6);
+    nx.textContent = S.knowTide
+      ? (springTide(S.day) ? "Tonight is the night to go." : "Next spring tide: night " + (S.day + (until === 0 ? 6 : until)))
+      : "You do not know the tide table yet.";
+    tide.append(tl, nx);
+
+    if (S.over) { save(); return; }
+
+    const box = $("choices");
+    box.innerHTML = "";
+    const row = document.createElement("div");
+    row.className = "row";
+    ACTIONS.filter(a => a.place === S.place && a.when()).forEach(a => {
+      const b = document.createElement("button");
+      b.type = "button";
+      if (a.id === "launch") b.className = "danger";
+      b.appendChild(document.createTextNode(typeof a.label === "function" ? a.label() : a.label));
+      const small = document.createElement("small");
+      small.className = "cost";
+      small.textContent = typeof a.cost === "function" ? a.cost() : a.cost;
+      b.appendChild(small);
+      b.addEventListener("click", () => { if (!S.over) { a.run(); render(); } });
+      row.appendChild(b);
+    });
+    box.appendChild(row);
+
+    drawHotspots();
+    drawCompass();
+    if (!$("mapov").hidden) drawMap();
+    save();
+  }
+
+  /* ================================================================ save */
+  function save() {
+    try {
+      if (S.over) { localStorage.removeItem(SAVE_KEY); return; }
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ S: Object.assign({}, S, { log: S.log.slice(-30) }), weather }));
+    } catch (e) { /* storage full or blocked: the game still works, it just will not resume */ }
+  }
+  function restore(d) {
+    if (!d || !d.S || d.S.over || typeof d.S.day !== "number") return false;
+    S = Object.assign(state0(), d.S);
+    S.heard = S.heard || {};
+    weather = d.weather || "clear";
+    const box = $("log");
+    box.innerHTML = "";
+    S.log.slice(-12).forEach(l => box.appendChild(lineEl(l, false)));
+    const p = document.createElement("p"); p.className = "new";
+    const s = document.createElement("span"); s.className = "who"; s.textContent = "Night " + S.day + " of 12 · you pick up where you left off";
+    p.appendChild(s); box.appendChild(p); box.scrollTop = box.scrollHeight;
+    return true;
+  }
+
+  /* ================================================================ start */
+  function opening() {
+    chapter("Night 1 of 12");
+    say("Fort Merle stands on a rock four miles off the coast, and everyone here has heard the same sentence: nobody swims it.");
+    say("The clerk read your transfer order this morning. Twelve nights, then the mainland prison and a cell without weather in it.");
+    say("So you will need a boat. Oak from the carpentry shop, rope from the chapel, canvas from the wash house, pitch from the galley, and a cave under the cliff where the warders never go.");
+  }
+  function restart() {
+    store.del(SAVE_KEY);
+    S = state0(); weather = "clear";
+    $("log").innerHTML = "";
+    Sound.heartbeat(false);
+    FX.clear();
+    opening();
+    render();
+  }
+
+  /* toggles: remembered per browser */
+  const prefs = Object.assign({ sound: true, music: true, voice: true }, store.get(PREFS_KEY) || {});
+  function paint(btn, label, on) { btn.textContent = label + ": " + (on ? "on" : "off"); btn.setAttribute("aria-pressed", String(on)); }
+  function applyPrefs() {
+    Sound.setSound(prefs.sound); Sound.setMusic(prefs.music); Voice.set(prefs.voice);
+    paint($("sound-btn"), "Sound", prefs.sound); paint($("music-btn"), "Music", prefs.music); paint($("voice-btn"), "Voice", prefs.voice);
+  }
+  paint($("sound-btn"), "Sound", false); paint($("music-btn"), "Music", false); paint($("voice-btn"), "Voice", false);
+  $("sound-btn").addEventListener("click", () => { prefs.sound = !Sound.sound; store.set(PREFS_KEY, prefs); Sound.setSound(prefs.sound); paint($("sound-btn"), "Sound", prefs.sound); render(); });
+  $("music-btn").addEventListener("click", () => { prefs.music = !Sound.music; store.set(PREFS_KEY, prefs); Sound.setMusic(prefs.music); paint($("music-btn"), "Music", prefs.music); });
+  const vb = $("voice-btn");
+  if (!Voice.available) { vb.disabled = true; vb.textContent = "Voice: not available"; }
+  vb.addEventListener("click", () => {
+    prefs.voice = !Voice.on; store.set(PREFS_KEY, prefs); Voice.set(prefs.voice); paint(vb, "Voice", prefs.voice);
+    if (prefs.voice) Voice.say("Fort Merle. Twelve nights until the transfer.");
+  });
+  $("restart-btn").addEventListener("click", () => { Voice.stop(); restart(); });
+
+  document.addEventListener("keydown", e => {
+    if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+    if (e.key === "Escape") { closeMap(); return; }
+    if (!$("title").hidden) return;
+    if (e.key === "m" || e.key === "M") { $("mapov").hidden ? openMap() : closeMap(); return; }
+    const dir = { ArrowUp: "n", ArrowRight: "e", ArrowDown: "s", ArrowLeft: "w", w: "n", d: "e", s: "s", a: "w" }[e.key];
+    if (!dir || S.over || !$("mapov").hidden) return;
+    const to = PLACES[S.place].exits[dir];
+    if (to) { e.preventDefault(); goTo(to); }
+  });
+
+  /* the title screen: its button is the gesture that lets the browser start sound */
+  let resumed = false;
+  function drawTitle() {
+    const box = $("title-actions");
+    box.innerHTML = "";
+    const begin = document.createElement("button");
+    begin.className = "go"; begin.type = "button";
+    begin.textContent = resumed ? "Continue, night " + S.day + " of 12" : "Begin the twelve nights";
+    begin.addEventListener("click", () => enter(!resumed));
+    box.appendChild(begin);
+    if (resumed) {
+      const fresh = document.createElement("button");
+      fresh.type = "button"; fresh.textContent = "Start a new escape";
+      fresh.addEventListener("click", () => enter(true));
+      box.appendChild(fresh);
+    }
+    begin.focus({ preventScroll: true });
+  }
+  function enter(fresh) {
+    $("title").hidden = true;
+    applyPrefs();
+    if (fresh) restart(); else render();
+    preload();
+  }
+
+  function boot(data) {
+    resumed = restore((data && data.S) ? data : store.get(SAVE_KEY));
+    if (!resumed) { S = state0(); }
+    render();
+    drawTitle();
+    FX.start();
+  }
+  if (window.claude && window.claude.hot && window.claude.hot.snapshot) {
+    window.claude.hot.snapshot(() => ({ S: Object.assign({}, S, { log: S.log.slice(-30) }), weather }));
+  }
+  const hot = window.claude && window.claude.hot;
+  if (hot && hot.ready) hot.ready(boot); else boot((hot && hot.data) || {});
+})();
+</script>
+<script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script></body></html>
