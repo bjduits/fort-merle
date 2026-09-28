@@ -1,0 +1,54 @@
+{
+ "c_voss_intro": {
+  "who": "voss",
+  "text": "Eleven years I've watched that water. I know where it's kind, and where it isn't."
+ },
+ "c_voss_build": {
+  "who": "voss",
+  "text": "Tighter. Let the plank tell you where it wants to go."
+ },
+ "c_voss_launch": {
+  "who": "voss",
+  "text": "Row, lad. And don't look back at it."
+ },
+ "c_kessel": {
+  "who": "kessel",
+  "text": "Busy hands, friend. The governor likes to hear about busy hands."
+ },
+ "c_warder_count": {
+  "who": "warder",
+  "text": "Count! Stand where you are!"
+ },
+ "c_warder_beam": {
+  "who": "warder",
+  "text": "Who's on the wall? Show yourself!"
+ },
+ "c_warder_door": {
+  "who": "warder",
+  "text": "Looking for something, are we?"
+ },
+ "c_warder_sea": {
+  "who": "warder",
+  "text": "There! Light on the sail! Man the boat!"
+ },
+ "c_warder_transfer": {
+  "who": "warder",
+  "text": "On your feet. The boat won't wait."
+ },
+ "c_foreman_planks": {
+  "who": "foreman",
+  "text": "Seven lids yesterday. Six today. Funny, that."
+ },
+ "c_foreman_tools": {
+  "who": "foreman",
+  "text": "Every tool back on its hook by the bell."
+ },
+ "c_laundress": {
+  "who": "laundress",
+  "text": "Mail sacks don't walk off on their own, dearie."
+ },
+ "c_governor": {
+  "who": "governor",
+  "text": "I have read your file all week. Take him below."
+ }
+}
